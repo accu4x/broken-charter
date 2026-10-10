@@ -1,3 +1,4 @@
 # Every text blob is LF, whatever core.autocrlf a machine has set.
 * text=auto eol=lf
 *.png binary
+*.woff2 binary

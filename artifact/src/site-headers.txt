@@ -1,0 +1,11 @@
+# Workers static-assets _headers for the site edition. build.mjs --site fills in the slug.
+# Adapted from Kestrel Nine's. Scripts: this origin only, plus the Cloudflare Web Analytics beacon
+# the zone injects. No inline script and no <style> block anywhere. Inline style *attributes* are
+# allowed (style-src-attr): the game builds markup with status colours in style="", and rewriting
+# those templates is its own change. Fonts are self-hosted, so no other origin is asked for anything.
+/{SLUG}/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com/beacon.min.js/; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+  Cross-Origin-Opener-Policy: same-origin

@@ -21,8 +21,9 @@ No accounts and no server: the game is one HTML file, and your guild lives in yo
 
 ## Play
 
-In the browser on claude.ai: <https://claude.ai/artifact/4kQSr4xjDXpF7DrSCUAZGX>.
-Progress stays on your device.
+In the browser: <https://play.latentmirror.com/broken-charter/>, or on claude.ai:
+<https://claude.ai/artifact/4kQSr4xjDXpF7DrSCUAZGX>. Progress stays on your device, and each of
+the two keeps its own guild.
 
 ## Build and test
 
@@ -30,6 +31,7 @@ Node 20 or later, no dependencies. The smoke test needs Python with Playwright.
 
 ```
 node artifact/build.mjs                  # artifact/dist/broken-charter.html
+node artifact/build.mjs --site           # artifact/dist/site/ for play.latentmirror.com
 python artifact/test/smoke.py            # headless play-through
 node artifact/test/leak.test.cjs         # run before every push; fails closed
 ```

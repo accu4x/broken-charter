@@ -53,7 +53,10 @@ as a single-file **Claude artifact**, built from this folder.
 | `artifact/src/guild.js` | Save and migration, the game day and Sleep, the station panels and the sheet, runs, the map, results. |
 | `artifact/src/battle.js` | Battle engine, enemy AI, effects, lighting and rendering. |
 | `artifact/src/boot.js` | Start-up, and `window.__bc` hooks for the smoke test. |
-| `artifact/build.mjs` | Inlines everything, in load order, into `artifact/dist/broken-charter.html`. |
+| `artifact/build.mjs` | Inlines everything, in load order, into `artifact/dist/broken-charter.html`; `--site` writes the play-host edition to `artifact/dist/site/`. |
+| `artifact/src/site-fonts.css`, `fonts/` | Site edition only: the three faces self-hosted (latin subsets), with their OFL licences. |
+| `artifact/src/site-headers.txt` | The site edition's `_headers` (CSP and security headers). |
+| `wrangler.jsonc` | Assets-only Worker on the route `play.latentmirror.com/broken-charter*` (item 52). |
 | `artifact/test/smoke.py` | Headless play-through: migrations, the hall and every station, Sleep and daily limits, a contract, a wipe. |
 | `artifact/test/leak.test.cjs` | Private-phrase and secret scan of every publishable file. |
 | `docs/SPEC-progression-and-polish.md` | The next planned work: milestones, balance tests, bosses, elites, polish. |
@@ -66,10 +69,17 @@ file can use names declared by the files before it. Keep the order in `build.mjs
 
 ```
 node artifact/build.mjs                  # artifact/dist/broken-charter.html
+node artifact/build.mjs --site           # artifact/dist/site/: play.latentmirror.com/broken-charter/
 python artifact/test/smoke.py            # headless play-through (Python Playwright)
 node artifact/test/leak.test.cjs         # before every push; fails closed
 node artifact/test/leak.test.cjs --dir artifact/dist
 ```
+
+The site edition (item 52) is the same game on its own origin: no inline script or `<style>`
+(the build refuses them in the page shell), self-hosted fonts, and `_headers` from
+`site-headers.txt`. Cloudflare Workers Builds deploys it from `main` with
+`node artifact/build.mjs --site` and `npx wrangler deploy`. Its saves are separate from the
+artifact's: `localStorage` is per origin.
 
 Publish `artifact/dist/broken-charter.html` to the artifact URL in `OPEN-ITEMS.md`, always to the
 same URL so players keep their saves. Only merged builds go live. Every pull request's build goes to
