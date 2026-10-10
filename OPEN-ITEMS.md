@@ -91,6 +91,24 @@ resolved; board refresh set, item 15; progression and polish planned, items 25โ€
     Before the push: build 194.1 KB, `smoke: clean` (22 checks), `leak: clean (git)` (26 files)
     and `leak: clean (dir)` on `artifact/dist`. A local `pre-push` hook runs the leak check on
     every push (Dan). Hooks are not committed, so a fresh clone needs it added again.
+52. **2026-10-10: A site edition at `play.latentmirror.com/broken-charter/`.** Dan asked for the
+    game on the play host, like Kestrel Nine, with a Play button on its Latent Mirror page. His
+    calls the same day: a **play-only first slice** (the game under its own CSP; install, offline
+    play and save export and import are the next slice, `BACKLOG.md`), **fonts self-hosted** (the
+    three Google faces, latin subsets, with their SIL OFL licences in `artifact/src/fonts/`), and
+    **Cloudflare Workers Builds** deploying from this repo's `main`. How: `build.mjs --site` writes
+    `artifact/dist/site/broken-charter/` (`index.html` with no inline script or `<style>`, `app.js`
+    with the scripts in the same scope, `app.css` with `site-fonts.css` ahead of `style.css`, the
+    fonts) and `_headers` from `site-headers.txt`; `wrangler.jsonc` is an assets-only Worker on the
+    route `play.latentmirror.com/broken-charter*`. The CSP keeps scripts to this origin and the
+    analytics beacon, but allows inline style *attributes* (`style-src-attr`), since the game
+    builds markup with status colours in `style=""`; moving those into classes is its own change.
+    The artifact build is unchanged, byte for byte. Saves are `localStorage` per origin, so a
+    player starts fresh on the play host. Checked 2026-10-10: played under the real CSP (served
+    with the `_headers` policy) through the hall, a contract map and a fight, with no violation.
+    **Dan's step:** connect this repo in Workers Builds, build command
+    `node artifact/build.mjs --site`, deploy command `npx wrangler deploy`. The `play` DNS record
+    already exists.
 
 ## Next build (agreed 2026-10-09, not started)
 
@@ -220,7 +238,9 @@ record what Dan decided; the spec marks everything else as proposed.
     (item 33), the class trials (item 34) and the region rule (item 36) all assume four. The spec
     recommends four, with Ranger and Druid back as subclasses.
 20. **The Necromancer.** `[open 2026-10-08]` Known from day one, or a mystery the guild uncovers?
-21. **Public link.** `[open 2026-10-08]` When, if ever, to share the artifact publicly.
+21. **Public link.** `[resolved 2026-10-10: item 52]` When, if ever, to share the artifact
+    publicly. Dan put the game on `play.latentmirror.com/broken-charter/`, a public URL, with a
+    Latent Mirror page to link it from.
 30. **Levels 15 and 20.** `[resolved 2026-10-09: items 35 and 36]` Dan: "Need to think about that." His direction: a
     guild-wide passive, and at 20 unlocking another base, or something, based on the hero's class.
     Proposals in the spec (ยง2).

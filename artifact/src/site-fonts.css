@@ -1,0 +1,23 @@
+/* Site edition only (build.mjs --site): the three faces the artifact loads from Google Fonts,
+   self-hosted, latin subsets. Licences: fonts/OFL-*.txt (SIL Open Font License 1.1). */
+@font-face {
+  font-family: 'Jacquard 12';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/jacquard-12-latin.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Pixelify Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url(fonts/pixelify-sans-latin-wght.woff2) format('woff2');
+}
+@font-face {
+  font-family: 'Silkscreen';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url(fonts/silkscreen-latin.woff2) format('woff2');
+}

@@ -34,7 +34,13 @@ Ideas and the long-game direction. Decisions live in `OPEN-ITEMS.md`.
 
 ## Hosting
 
-- **Installable site edition** at `play.latentmirror.com/broken-charter/`, like Kestrel Nine's
+- ~~**Installable site edition** at `play.latentmirror.com/broken-charter/`, like Kestrel Nine's
   (assets-only Worker on its own path route, manifest, icons, service worker, save export and
-  import). Only if Dan wants it.
-- **Latent Mirror hub page**: screenshot from `docs/showcase/`, Dan's copy, and a link out. No iframe.
+  import). Only if Dan wants it.~~ **Slice 1 built 2026-10-10** (`OPEN-ITEMS.md` item 52): the game
+  on the play host under its own CSP, fonts self-hosted.
+- **Site edition, slice 2:** install (manifest, icons), offline play (service worker), and save
+  export and import, so a guild can move between the play host and the artifact. Like Kestrel
+  Nine's.
+- **Inline styles into classes,** so the site CSP can drop `style-src-attr 'unsafe-inline'`.
+- ~~**Latent Mirror hub page**: screenshot from `docs/showcase/`, Dan's copy, and a link out. No
+  iframe.~~ **Added 2026-10-10** in latent-mirror, gates closed, with a Play button for the play host.

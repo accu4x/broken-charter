@@ -1,0 +1,21 @@
+// Broken Charter site edition: an assets-only Worker on play.latentmirror.com (Dan, 2026-10-10).
+// Each app on the play host deploys itself on its own path route; there is no shared host project.
+// Build first: node artifact/build.mjs --site   then: npx wrangler deploy
+// Cloudflare Workers Builds runs exactly that from this repo's main.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "broken-charter",
+  "compatibility_date": "2026-10-10",
+  "workers_dev": false,
+  "preview_urls": false,
+  // A route, not a custom domain, so each app keeps its own path on the shared host.
+  // DNS: the proxied AAAA record `play` -> 100:: in the latentmirror.com zone already exists.
+  "routes": [{ "pattern": "play.latentmirror.com/broken-charter*", "zone_name": "latentmirror.com" }],
+  "assets": {
+    // Holds broken-charter/ (a route does not strip its path) and _headers.
+    "directory": "./artifact/dist/site",
+    // /broken-charter redirects to /broken-charter/, which serves broken-charter/index.html.
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  }
+}
