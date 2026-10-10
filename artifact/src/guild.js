@@ -21,6 +21,7 @@ if (!SAVE || SAVE.v !== 3) {
   const starters = [['brenna', 'Brenna', 'warrior', 'human'], ['sela', 'Sela', 'thief', 'elf'], ['orrin', 'Orrin', 'mage', 'human'], ['hilde', 'Hilde', 'priest', 'dwarf'], ['grask', 'Grask', 'ranger', 'orc'], ['wren', 'Wren', 'druid', 'elf']];
   for (const [uid, name, cls, race] of starters) { const oh = (old.heroes || {})[uid] || { lv: 1, xp: 0 }; s.roster.push({ uid, name, cls, race, lv: oh.lv, xp: oh.xp, quirks: [], gear: { weapon: 0, armor: 0, trinket: null }, sub: null, look: null }); }
   s.party = (old.party || ['brenna', 'sela', 'orrin', 'hilde', 'grask']).slice(0, 5); s.leader = old.leader || 'brenna';
+  s.contractDay = store.get('bc.run', null) ? 1 : null;
   SAVE = s; store.set('bc.save', SAVE);
 }
 const save = () => store.set('bc.save', SAVE);
@@ -118,7 +119,7 @@ function rankName() { const d = SAVE.done; return d >= 8 ? 'Charter Bastion' : d
 function renderGuild() {
   collectDispatch(); refreshBoard();
   SAVE.roster.forEach(ensureSprite); (SAVE.board || []).forEach(ensureSprite);
-  SAVE.party = SAVE.party.filter(uid => heroById(uid) && heroState(heroById(uid)) === 'ready');
+  SAVE.party = SAVE.party.filter(uid => heroById(uid) && ['ready', 'run'].includes(heroState(heroById(uid))));
   if (!SAVE.party.includes(SAVE.leader)) SAVE.leader = SAVE.party[0] || null;
   SND.play('guild');
   $('#gGold').textContent = SAVE.gold; $('#gDone').textContent = SAVE.done; $('#gRank').textContent = rankName();
@@ -308,7 +309,7 @@ $('#sleepRow').addEventListener('click', e => {
 });
 $('#musicBtn').onclick = () => { SND.init(); SND.setMusic(!SND.musicOn); renderGuild(); };
 $('#sfxBtn').onclick = () => { SND.init(); SND.setSfx(!SND.sfxOn); SND.fx('blip'); renderGuild(); };
-$('#resumeBtn').onclick = () => { SND.fx('select'); renderMap(); show('map'); };
+$('#resumeBtn').onclick = () => { SND.fx('select'); if (RUN.active) enterNode(...RUN.active); else { renderMap(); show('map'); } };
 
 /* ================= RUN & MAP ================= */
 function genMap() {
@@ -377,9 +378,12 @@ function renderPartyMini(el) {
     d.insertAdjacentHTML('beforeend', `<div style="min-width:0;display:grid;gap:3px"><span>${h.name}${RUN.leader === id ? ' <span class="crown">Leader</span>' : ''} <span class="muted num">${f > 0 ? Math.round(f * max) + '/' + max : 'Fallen'}</span></span><div class="hpbar"><i class="${f < .35 ? 'low' : ''}" style="width:${f * 100}%"></i></div></div>`);
     el.appendChild(d); });
 }
+// A node is only marked visited once it resolves. Until then RUN.active holds it, so a reload
+// re-enters the same fight or event instead of skipping past it.
+function clearNode() { const [l, i] = RUN.active; RUN.pos = [l, i]; RUN.visited.push([l, i]); RUN.active = null; saveRun(); }
 async function enterNode(l, i) {
   const nd = RUN.map[l][i]; SND.fx('select');
-  RUN.pos = [l, i]; RUN.visited.push([l, i]); saveRun();
+  RUN.active = [l, i]; saveRun();
   if (nd.type === 'battle' || nd.type === 'elite' || nd.type === 'boss') {
     const S = SETTINGS[RUN.contract];
     const comp = nd.type === 'boss' ? S.boss : nd.type === 'elite' ? pick(S.elite) : pick(S.battles);
@@ -389,19 +393,20 @@ async function enterNode(l, i) {
     RUN.xp = (RUN.xp || 0) + (nd.type === 'boss' ? 100 : nd.type === 'elite' ? 55 : 30);
     const mats = REGION_MATS[RUN.contract]; const n = nd.type === 'boss' ? 5 : nd.type === 'elite' ? 3 : 1 + (rnd() < .5 ? 1 : 0);
     for (let j = 0; j < n; j++) { const m = pick(mats); RUN.mats[m] = (RUN.mats[m] || 0) + 1; }
-    saveRun();
+    clearNode();
     if (nd.type === 'boss') return finishRun(true);
     renderMap(); show('map');
   } else if (nd.type === 'treasure') showTreasure(); else if (nd.type === 'rest') showRest();
 }
 function showTreasure() {
-  const g = 25 + Math.floor(rnd() * 16); RUN.gold += g; const m = pick(REGION_MATS[RUN.contract]); RUN.mats[m] = (RUN.mats[m] || 0) + 2; saveRun(); SND.fx('coin');
+  const g = 25 + Math.floor(rnd() * 16); const m = pick(REGION_MATS[RUN.contract]); SND.fx('coin');
+  const take = () => { RUN.gold += g; RUN.mats[m] = (RUN.mats[m] || 0) + 2; clearNode(); };
   const pool = shuffle(Object.keys(RELICS).filter(k => !RUN.relics.includes(k))).slice(0, 2);
   const p = $('#eventPanel');
   p.innerHTML = `<span class="label">Cache</span><h2>A forgotten strongbox</h2><p>Inside: <b class="gold num">${g} gold</b>, 2 ${MATS[m].toLowerCase()} and two imperial curios. Your party can carry one.</p><div class="choices"></div>`;
   const ch = p.querySelector('.choices');
-  pool.forEach(k => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn choice cursor'; b.innerHTML = `${RELICS[k].name}<small>${RELICS[k].text}</small>`; b.onclick = () => { RUN.relics.push(k); saveRun(); SND.fx('buff'); renderMap(); show('map'); }; ch.appendChild(b); });
-  if (!pool.length) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn choice'; b.textContent = 'Move on'; b.onclick = () => { renderMap(); show('map'); }; ch.appendChild(b); }
+  pool.forEach(k => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn choice cursor'; b.innerHTML = `${RELICS[k].name}<small>${RELICS[k].text}</small>`; b.onclick = () => { RUN.relics.push(k); take(); SND.fx('buff'); renderMap(); show('map'); }; ch.appendChild(b); });
+  if (!pool.length) { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn choice'; b.textContent = 'Move on'; b.onclick = () => { take(); renderMap(); show('map'); }; ch.appendChild(b); }
   show('event');
 }
 function showRest() {
@@ -409,9 +414,9 @@ function showRest() {
   p.innerHTML = `<span class="label">Camp</span><h2>A sheltered fire</h2><p>The party can rest or sharpen up before pressing on. The fallen stay fallen until the chapel.</p><div class="choices"></div>`;
   const ch = p.querySelector('.choices');
   const a = document.createElement('button'); a.type = 'button'; a.className = 'btn choice cursor'; a.innerHTML = 'Tend wounds<small>Every living hero heals 40%.</small>';
-  a.onclick = () => { RUN.party.forEach(id => { if (RUN.hp[id] > 0) RUN.hp[id] = Math.min(1, RUN.hp[id] + .4); }); saveRun(); SND.fx('heal'); renderMap(); show('map'); };
+  a.onclick = () => { RUN.party.forEach(id => { if (RUN.hp[id] > 0) RUN.hp[id] = Math.min(1, RUN.hp[id] + .4); }); clearNode(); SND.fx('heal'); renderMap(); show('map'); };
   const b = document.createElement('button'); b.type = 'button'; b.className = 'btn choice cursor'; b.innerHTML = 'Drill<small>Party ATK +10% for the rest of this contract.</small>';
-  b.onclick = () => { RUN.drill++; saveRun(); SND.fx('buff'); renderMap(); show('map'); };
+  b.onclick = () => { RUN.drill++; clearNode(); SND.fx('buff'); renderMap(); show('map'); };
   ch.append(a, b); show('event');
 }
 function finishRun(won, abandoned) {

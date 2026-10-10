@@ -6,7 +6,8 @@ Checks, on a fresh save and with no page errors:
   2. every guild tab renders; hire, train a subclass, forge, brew, dispatch, post and pack work;
   3. a v2 save (real dates) migrates to v3 game days with its dispatch and post intact;
   4. Sleep returns the dispatch and frees the post;
-  5. a contract plays to its result screen on auto, and a second one waits for Sleep;
+  5. a reload mid-battle resumes that fight; a contract plays to its result on auto, and a second
+     one waits for Sleep;
   6. the recruit board refreshes every 3 days;
   7. a forced wipe kills the whole party and fills the Wall of the Fallen.
 Exit code 0 means every check passed.
@@ -155,6 +156,14 @@ def main() -> int:
         tab(page, "hall")
         page.click('[data-act="embark"]')
         page.wait_for_timeout(250)
+        page.click(".node.open")
+        page.wait_for_timeout(300)
+        page.reload()
+        page.wait_for_timeout(900)
+        r = ev(page, "() => { const R = window.__bc.RUN; return [R.active && R.active.join(), R.visited.length]; }")
+        page.click("#resumeBtn")
+        page.wait_for_timeout(250)
+        check(r == ["0,0", 0] and screen(page) == "battle", "a reload mid-battle resumes the same fight" + ("" if r == ["0,0", 0] else f": {r}"))
         check(play_out(page, 150) == "result", "a contract plays to its result on auto")
         page.click("#homeBtn")
         page.wait_for_timeout(200)

@@ -62,6 +62,7 @@ const SND = {
   },
   tick() {
     const c = this.ctx, T = this.cur; if (!c || !T || document.hidden) return; const sd = 60 / T.bpm / 2;
+    if (this.next < c.currentTime) this.next = c.currentTime + .02;
     while (this.next < c.currentTime + .14) {
       const i = this.step % T.lead.length, t = this.next;
       const hold = (arr, i) => { let n = 1; while (arr[(i + n) % arr.length] === '-' && n < arr.length) n++; return n; };
