@@ -89,9 +89,13 @@ resolved; board refresh set, item 15). Before that:
     dummy, forge, map table, steward's ledger, chapel door, stairs to the bunks). Tapping a
     station slides its panel up. A day counter replaces dates; **Sleep** ends the day: dispatches
     return, posts unlock, the next feature opens. Removes `bc.dayshift` and the real clock.
+    *Sleep built 2026-10-09 (slice A, branch `slice-a/sleep`):* a day counter and a Sleep button
+    in the header, which asks first if no contract was taken. The room is slice B.
 15. **Daily limits.** **One contract per day.** A dispatch takes a day: a hero goes out once,
     comes back the next day, and can be sent again then (Dan, 2026-10-09; settles item 18). The
-    **recruit board refreshes every 3 days**, not daily (Dan, 2026-10-09).
+    **recruit board refreshes every 3 days**, not daily (Dan, 2026-10-09). *Built 2026-10-09
+    (slice A).* Save shape v3 migrates v2 saves: the day starts at 1, and anything out or locked
+    resolves on the first Sleep.
 16. **A guided questline, one feature per day.** A steward (working name Maud, a retired
     one-eyed sergeant) introduces each feature in short dialog with a spotlight and arrow; each
     comes with a small quest and reward. Order: day 1 contract board, three starting heroes and
@@ -112,7 +116,7 @@ resolved; board refresh set, item 15). Before that:
 
 ## Tech debt
 
-22. **Real-clock days.** `[2026-10-08]` Recruit refresh, dispatch returns and post locks read the
+22. **Real-clock days.** `[resolved 2026-10-09, slice A]` Recruit refresh, dispatch returns and post locks read the
     device date, and the smoke test moves it with `bc.dayshift`. Item 14 replaces both.
 23. **Smoke test only.** `[2026-10-09]` No unit tests of combat maths or the save migration
     beyond `smoke.py`. Worth a small Node test of damage, turn order and migration once the

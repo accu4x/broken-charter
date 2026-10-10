@@ -42,7 +42,7 @@ const denylist = [];
 for (const name of LISTS) {
   const file = path.join(PRIVATE, name);
   if (fs.existsSync(file)) denylist.push(...parse(fs.readFileSync(file, 'utf8')));
-  else if (name === REQUIRED && !process.env.CI) {
+  else if (name === REQUIRED) {
     console.error(`leak: ../private/${name} is missing, so nothing is vouched for. Failing closed.`);
     process.exit(1);
   }
