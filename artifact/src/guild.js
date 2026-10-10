@@ -1,12 +1,21 @@
 /* ================= SAVE & CLOCK ================= */
-function dayStr(off) { const d = new Date(Date.now() + ((store.get('bc.dayshift', 0) || 0) + (off || 0)) * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-const today = () => dayStr(0);
+// Game days, not the device clock: SAVE.day counts up by one each time the player sleeps.
 const FOE_ATK = 1.45, FOE_HP = 1.2;
+const BOARD_DAYS = 3;
 const xpNeed = lv => 80 + 40 * (lv - 1);
 const lvMul = lv => 1 + .07 * (lv - 1);
-function newSave() { return { v: 2, gold: 60, done: 0, wins: {}, roster: [], party: [], leader: null, contract: 'crypt', mats: { bone: 2, iron: 2, scrap: 2, hide: 2, scale: 2, venom: 2 }, items: { draught: 1, antivenom: 0, oil: 0 }, pack: { draught: 1, antivenom: 0, oil: 0 }, build: { hall: 1, yard: 1, forge: 1 }, posts: {}, dispatch: [], reports: [], chapel: [], fallen: [], intel: {}, board: [], boardDay: null, nextUid: 1, note: '' }; }
+function newSave() { return { v: 3, day: 1, contractDay: null, gold: 60, done: 0, wins: {}, roster: [], party: [], leader: null, contract: 'crypt', mats: { bone: 2, iron: 2, scrap: 2, hide: 2, scale: 2, venom: 2 }, items: { draught: 1, antivenom: 0, oil: 0 }, pack: { draught: 1, antivenom: 0, oil: 0 }, build: { hall: 1, yard: 1, forge: 1 }, posts: {}, dispatch: [], reports: [], chapel: [], fallen: [], intel: {}, board: [], boardDay: null, nextUid: 1, note: '' }; }
 let SAVE = store.get('bc.save', null);
-if (!SAVE || SAVE.v !== 2) {
+store.del('bc.dayshift');
+if (SAVE && SAVE.v === 2) {
+  // v2 -> v3: real dates become game days. Anything out or locked resolves on the first Sleep.
+  SAVE.v = 3; SAVE.day = 1; SAVE.contractDay = store.get('bc.run', null) ? 1 : null;
+  SAVE.dispatch.forEach(d => d.back = 2);
+  for (const k in SAVE.posts) if (SAVE.posts[k]) SAVE.posts[k].until = 2;
+  SAVE.boardDay = SAVE.board && SAVE.board.length ? 1 : null;
+  store.set('bc.save', SAVE);
+}
+if (!SAVE || SAVE.v !== 3) {
   const old = SAVE || {}; const s = newSave();
   s.gold = old.gold != null ? old.gold : 60; s.done = old.done || 0; s.wins = old.wins || {}; s.contract = old.contract || 'crypt';
   const starters = [['brenna', 'Brenna', 'warrior', 'human'], ['sela', 'Sela', 'thief', 'elf'], ['orrin', 'Orrin', 'mage', 'human'], ['hilde', 'Hilde', 'priest', 'dwarf'], ['grask', 'Grask', 'ranger', 'orc'], ['wren', 'Wren', 'druid', 'elf']];
@@ -63,13 +72,22 @@ function genCandidate() {
   const cost = 70 + nG * 25 - nB * 15 + (lv - 1) * 60;
   return { uid: 'r' + (SAVE.nextUid++) + '_' + Math.floor(R() * 1e4), name, cls, race, lv, xp: 0, quirks, gear: { weapon: 0, armor: 0, trinket: null }, sub: null, look: recruitLook(cls, race, R), cost };
 }
-function refreshBoard() { if (SAVE.boardDay === today() && SAVE.board) return; const n = 2 + SAVE.build.hall + (postHolder('recruiter') ? 1 : 0); SAVE.board = Array.from({ length: n }, genCandidate); SAVE.boardDay = today(); save(); }
+const boardDaysLeft = () => SAVE.boardDay == null ? 0 : Math.max(0, SAVE.boardDay + BOARD_DAYS - SAVE.day);
+function refreshBoard() { if (SAVE.board && boardDaysLeft() > 0) return false; const n = 2 + SAVE.build.hall + (postHolder('recruiter') ? 1 : 0); SAVE.board = Array.from({ length: n }, genCandidate); SAVE.boardDay = SAVE.day; save(); return true; }
 function hireCost(c) { if (desperate()) return 0; return Math.round(c.cost * (1 - disc.recruit()) * (1 + (c.quirks.includes('greedy') ? .15 : 0))); }
 function desperate() { return SAVE.roster.filter(h => heroState(h) !== 'chapel').length === 0; }
 
-/* ---------- day rollover: dispatch returns, post locks ---------- */
+/* ---------- day rollover: Sleep, dispatch returns, post locks ---------- */
+const contractTaken = () => SAVE.contractDay === SAVE.day;
+function sleep() {
+  if (RUN) return;
+  SAVE.day++; GUI.confirm = null; SAVE.note = '';
+  collectDispatch();
+  if (refreshBoard()) SAVE.reports.push('New faces are waiting on the recruit board.');
+  SND.fx('heal'); renderGuild();
+}
 function collectDispatch() {
-  const t = today(); const back = SAVE.dispatch.filter(d => d.back <= t); if (!back.length) return;
+  const t = SAVE.day; const back = SAVE.dispatch.filter(d => d.back <= t); if (!back.length) return;
   SAVE.dispatch = SAVE.dispatch.filter(d => d.back > t);
   for (const d of back) {
     const h = heroById(d.uid); if (!h) continue; let line = `<b>${h.name}</b> returned from `;
@@ -104,7 +122,10 @@ function renderGuild() {
   if (!SAVE.party.includes(SAVE.leader)) SAVE.leader = SAVE.party[0] || null;
   SND.play('guild');
   $('#gGold').textContent = SAVE.gold; $('#gDone').textContent = SAVE.done; $('#gRank').textContent = rankName();
-  $('#gDay').textContent = new Date(today() + 'T12:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  $('#gDay').textContent = SAVE.day;
+  $('#sleepRow').innerHTML = GUI.confirm === 'sleep'
+    ? `<span>End the day without a contract?</span><button class="btn small" data-act="sleep" type="button">Sleep</button><button class="btn small" data-act="cancel" type="button">Stay up</button>`
+    : `<span class="muted small">${RUN ? 'A party is still out.' : contractTaken() ? "Today's contract is taken." : 'One contract a day.'}</span><button class="btn small" data-act="${contractTaken() ? 'sleep' : 'askSleep'}" ${RUN ? 'disabled' : ''} type="button">Sleep</button>`;
   $('#gMats').innerHTML = Object.keys(MATS).map(k => `<span class="mat" title="${MATS[k]}"><i class="dot" style="background:${MATCOL[k]}"></i>${MATS[k]} <b class="num">${SAVE.mats[k] || 0}</b></span>`).join('');
   $('#musicBtn').textContent = 'Music ' + (SND.musicOn ? 'on' : 'off'); $('#musicBtn').classList.toggle('on', SND.musicOn);
   $('#sfxBtn').textContent = 'Sound ' + (SND.sfxOn ? 'on' : 'off'); $('#sfxBtn').classList.toggle('on', SND.sfxOn);
@@ -127,7 +148,7 @@ function statLine(h) { const s = heroStats(h); return `HP ${s.hp} · ATK ${Math.
 
 function tabHall() {
   let h = '';
-  if (SAVE.reports.length) h += `<div class="win notice"><div class="spread"><span class="label">While you were away</span><button class="btn small" data-act="clearReports" type="button">Dismiss</button></div>${SAVE.reports.map(r => `<p>${r}</p>`).join('')}</div>`;
+  if (SAVE.reports.length) h += `<div class="win notice"><div class="spread"><span class="label">Overnight</span><button class="btn small" data-act="clearReports" type="button">Dismiss</button></div>${SAVE.reports.map(r => `<p>${r}</p>`).join('')}</div>`;
   if (SAVE.chapel.length) h += `<div class="win notice warnbox"><div class="spread"><p>${SAVE.chapel.length} fallen hero${SAVE.chapel.length > 1 ? 'es lie' : ' lies'} in the chapel awaiting a decision.</p><button class="btn small" data-act="tab" data-k="chapel" type="button">Go to the chapel</button></div></div>`;
   h += `<div class="win"><div class="spread" style="margin-bottom:10px"><h2>Contract board</h2><span class="label">Pick one</span></div><div class="contracts">`;
   for (const k in SETTINGS) { const s = SETTINGS[k]; const wins = SAVE.wins[k] || 0;
@@ -141,8 +162,8 @@ function tabHall() {
   h += `<div class="win"><div class="spread" style="margin-bottom:8px"><h2>Pack</h2><span class="label">${packN} / 3 slots</span></div><div class="packrow">`;
   for (const k in ITEMS) { const n = SAVE.pack[k] || 0, st = SAVE.items[k] || 0; h += `<div class="packitem"><div><b>${ITEMS[k].name}</b><span class="muted small">${ITEMS[k].text} In stock: ${st}</span></div><div class="stepper"><button class="btn small" data-act="pack" data-k="${k}" data-d="-1" ${n ? '' : 'disabled'} type="button" aria-label="Pack one less">−</button><b class="num">${n}</b><button class="btn small" data-act="pack" data-k="${k}" data-d="1" ${n < st && packN < 3 ? '' : 'disabled'} type="button" aria-label="Pack one more">+</button></div></div>`; }
   h += `</div><p class="muted small" style="margin-top:6px">Craft more at the Forge. Using an item in battle takes the hero's turn.</p></div>`;
-  const ok = party.length >= 1 && !RUN;
-  h += `<div class="spread"><span class="muted">${RUN ? 'Finish or abandon the current contract first.' : !party.length ? 'Assign at least one hero.' : `Permadeath is on. A full wipe loses everyone sent.`}</span><button class="btn primary" data-act="embark" ${ok ? '' : 'disabled'} type="button">Embark</button></div>`;
+  const ok = party.length >= 1 && !RUN && !contractTaken();
+  h += `<div class="spread"><span class="muted">${RUN ? 'Finish or abandon the current contract first.' : contractTaken() ? "The guild has taken today's contract. Sleep to start a new day." : !party.length ? 'Assign at least one hero.' : `Permadeath is on. A full wipe loses everyone sent.`}</span><button class="btn primary" data-act="embark" ${ok ? '' : 'disabled'} type="button">Embark</button></div>`;
   return h;
 }
 function tabRoster() {
@@ -169,8 +190,8 @@ function tabRoster() {
 }
 function tabRecruit() {
   let h = `<div class="win">${buildingCard('hall')}</div>`;
-  h += `<div class="win"><div class="spread" style="margin-bottom:6px"><h2>Recruit board</h2><span class="label">Roster ${SAVE.roster.length} / ${rosterCap()}</span></div><p class="muted small" style="margin-bottom:10px">New faces arrive each morning. ${postHolder('recruiter') ? `${postHolder('recruiter').name} is recruiting: hires ${Math.round(disc.recruit() * 100)}% cheaper.` : 'Post a Recruiter for better terms.'}${desperate() ? ' With no one left, a volunteer will sign on for free.' : ''}</p><div class="roster">`;
-  if (!SAVE.board.length) h += `<p class="muted">The board is empty until tomorrow.</p>`;
+  h += `<div class="win"><div class="spread" style="margin-bottom:6px"><h2>Recruit board</h2><span class="label">Roster ${SAVE.roster.length} / ${rosterCap()}</span></div><p class="muted small" style="margin-bottom:10px">New faces arrive every ${BOARD_DAYS} days; the next in ${boardDaysLeft() === 1 ? '1 day' : boardDaysLeft() + ' days'}. ${postHolder('recruiter') ? `${postHolder('recruiter').name} is recruiting: hires ${Math.round(disc.recruit() * 100)}% cheaper.` : 'Post a Recruiter for better terms.'}${desperate() ? ' With no one left, a volunteer will sign on for free.' : ''}</p><div class="roster">`;
+  if (!SAVE.board.length) h += `<p class="muted">The board is empty until new faces arrive.</p>`;
   for (const c of SAVE.board) {
     const cost = hireCost(c), full = SAVE.roster.length >= rosterCap();
     h += `<div class="card hero"><div class="fig" data-fig="${c.uid}" data-size="60"></div><div class="info"><h3>${c.name}</h3><span class="meta">${CLASSES[c.cls].name} · ${RACES[c.race].name} (${RACES[c.race].text}) · Lv ${c.lv}</span><span class="meta num">${statLine(c)}</span><div class="row" style="gap:4px">${quirkChips(c)}</div><span class="meta small">${c.quirks.map(q => QUIRKS[q].name + ': ' + QUIRKS[q].text).join(' · ')}</span></div>
@@ -217,7 +238,7 @@ function tabPosts() {
   let h = `<div class="win"><h2 style="margin-bottom:6px">Guild posts</h2><p class="muted small" style="margin-bottom:10px">A posted hero gives a passive bonus but can't take contracts or dispatches. Posts lock until tomorrow once filled.</p><div class="gearrows">`;
   const ready = SAVE.roster.filter(x => heroState(x) === 'ready');
   for (const k in POSTS) {
-    const p = SAVE.posts[k], hr = p && heroById(p.uid); const locked = hr && today() < p.until;
+    const p = SAVE.posts[k], hr = p && heroById(p.uid); const locked = hr && SAVE.day < p.until;
     h += `<div class="gearrow post"><div><span class="label">${POSTS[k].name}</span><p class="small">${POSTS[k].text}</p></div>`;
     if (hr) h += `<div class="row"><span data-port="${hr.uid}" data-size="34"></span><b>${hr.name}</b>${locked ? '<span class="chip">Locked until tomorrow</span>' : `<button type="button" class="btn small" data-act="release" data-k="${k}">Release</button>`}</div>`;
     else h += `<div class="row"><select class="sel" id="post_${k}">${ready.map(x => `<option value="${x.uid}">${x.name} · ${className(x)}</option>`).join('')}</select><button type="button" class="btn small" data-act="assign" data-k="${k}" ${ready.length ? '' : 'disabled'}>Assign</button></div>`;
@@ -232,12 +253,12 @@ function tabChapel() {
   for (const c of SAVE.chapel) { const hr = heroById(c.uid); if (!hr) continue; const fee = 60 + 40 * hr.lv, ch = Math.min(.95, .65 + disc.chap());
     h += `<div class="gearrow"><div class="row"><span data-port="${hr.uid}" data-size="40"></span><div><b>${hr.name}</b><span class="muted small"> ${className(hr)} · Lv ${hr.lv} · fell in ${c.where}</span></div></div><div class="buy"><span class="small">${Math.round(ch * 100)}% chance</span><button type="button" class="btn small primary" data-act="resurrect" data-uid="${hr.uid}" ${SAVE.gold >= fee ? '' : 'disabled'}>Resurrect <span class="num">${fee}g</span></button><button type="button" class="btn small" data-act="bury" data-uid="${hr.uid}">Lay to rest</button></div></div>`; }
   h += `</div><div class="win wall"><h2 style="margin-bottom:8px">Wall of the Fallen</h2>`;
-  h += SAVE.fallen.length ? `<ul class="fallen">${SAVE.fallen.slice().reverse().map(f => `<li><b>${f.name}</b> <span class="muted">${f.cls} · Lv ${f.lv}</span><span class="small muted"> ${f.cause} · ${new Date(f.date + 'T12:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span></li>`).join('')}</ul>` : `<p class="muted">No names yet.</p>`;
+  h += SAVE.fallen.length ? `<ul class="fallen">${SAVE.fallen.slice().reverse().map(f => `<li><b>${f.name}</b> <span class="muted">${f.cls} · Lv ${f.lv}</span><span class="small muted"> ${f.cause} · ${typeof f.date === 'number' ? 'Day ' + f.date : new Date(f.date + 'T12:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span></li>`).join('')}</ul>` : `<p class="muted">No names yet.</p>`;
   return h + `</div>`;
 }
 function killHero(uid, cause) {
   const h = heroById(uid); if (!h) return;
-  SAVE.fallen.push({ name: h.name, cls: className(h), lv: h.lv, cause, date: today() });
+  SAVE.fallen.push({ name: h.name, cls: className(h), lv: h.lv, cause, date: SAVE.day });
   SAVE.roster = SAVE.roster.filter(x => x.uid !== uid); SAVE.party = SAVE.party.filter(x => x !== uid); SAVE.chapel = SAVE.chapel.filter(c => c.uid !== uid);
   for (const k in SAVE.posts) if (SAVE.posts[k] && SAVE.posts[k].uid === uid) delete SAVE.posts[k];
   SAVE.dispatch = SAVE.dispatch.filter(d => d.uid !== uid); if (SAVE.leader === uid) SAVE.leader = SAVE.party[0] || null;
@@ -266,9 +287,9 @@ $('#panel').addEventListener('click', e => {
     case 'craftGear': { const h2 = heroById(GUI.forgeHero), slot = b.dataset.slot, nx = GEAR[slot][h2.gear[slot] + 1]; const c = forgeCost(nx.cost); if (!canPay(c)) return; pay(c); h2.gear[slot]++; snd = 'buff'; break; }
     case 'craftTrinket': { const h2 = heroById(GUI.forgeHero); const c = forgeCost(TRINKETS[k].cost); if (!canPay(c)) return; pay(c); h2.gear.trinket = k; snd = 'buff'; break; }
     case 'craftItem': { const c = forgeCost(ITEMS[k].cost); if (!canPay(c)) return; pay(c); SAVE.items[k] = (SAVE.items[k] || 0) + 1; snd = 'coin'; break; }
-    case 'dispatch': { const m = $('#dMission').value, h2 = heroById($('#dHero').value); if (!h2 || heroState(h2) !== 'ready') return; GUI.dMission = m; const [kind, region] = m.split(':'); SAVE.dispatch.push({ uid: h2.uid, kind, region: region || null, back: dayStr(1) }); SAVE.party = SAVE.party.filter(x => x !== h2.uid); snd = 'select'; break; }
-    case 'assign': { const h2 = heroById($('#post_' + k).value); if (!h2 || heroState(h2) !== 'ready') return; SAVE.posts[k] = { uid: h2.uid, until: dayStr(1) }; SAVE.party = SAVE.party.filter(x => x !== h2.uid); snd = 'select'; break; }
-    case 'release': { const p = SAVE.posts[k]; if (p && today() >= p.until) delete SAVE.posts[k]; break; }
+    case 'dispatch': { const m = $('#dMission').value, h2 = heroById($('#dHero').value); if (!h2 || heroState(h2) !== 'ready') return; GUI.dMission = m; const [kind, region] = m.split(':'); SAVE.dispatch.push({ uid: h2.uid, kind, region: region || null, back: SAVE.day + 1 }); SAVE.party = SAVE.party.filter(x => x !== h2.uid); snd = 'select'; break; }
+    case 'assign': { const h2 = heroById($('#post_' + k).value); if (!h2 || heroState(h2) !== 'ready') return; SAVE.posts[k] = { uid: h2.uid, until: SAVE.day + 1 }; SAVE.party = SAVE.party.filter(x => x !== h2.uid); snd = 'select'; break; }
+    case 'release': { const p = SAVE.posts[k]; if (p && SAVE.day >= p.until) delete SAVE.posts[k]; break; }
     case 'clearReports': SAVE.reports = []; break;
     case 'resurrect': { const fee = 60 + 40 * hr.lv, ch = Math.min(.95, .65 + disc.chap()); if (SAVE.gold < fee) return; SAVE.gold -= fee;
       if (Math.random() < ch) { SAVE.chapel = SAVE.chapel.filter(c => c.uid !== uid); SAVE.note = `${hr.name} draws breath again.`; snd = 'heal'; }
@@ -279,6 +300,12 @@ $('#panel').addEventListener('click', e => {
 });
 $('#panel').addEventListener('change', e => { if (e.target.id === 'dMission') GUI.dMission = e.target.value; });
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-act="tab"]'); if (!b) return; SND.init(); GUI.tab = b.dataset.k; store.set('bc.tab', GUI.tab); GUI.confirm = null; SAVE.note = ''; SND.fx('blip'); renderGuild(); });
+$('#sleepRow').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]'); if (!b || b.disabled) return; SND.init();
+  if (b.dataset.act === 'askSleep') { GUI.confirm = 'sleep'; SND.fx('blip'); renderGuild(); }
+  else if (b.dataset.act === 'cancel') { GUI.confirm = null; SND.fx('blip'); renderGuild(); }
+  else sleep();
+});
 $('#musicBtn').onclick = () => { SND.init(); SND.setMusic(!SND.musicOn); renderGuild(); };
 $('#sfxBtn').onclick = () => { SND.init(); SND.setSfx(!SND.sfxOn); SND.fx('blip'); renderGuild(); };
 $('#resumeBtn').onclick = () => { SND.fx('select'); renderMap(); show('map'); };
@@ -298,9 +325,10 @@ function genMap() {
   return nodes;
 }
 function startRun() {
-  const party = SAVE.party.filter(uid => heroById(uid) && heroState(heroById(uid)) === 'ready'); if (!party.length) return;
+  const party = SAVE.party.filter(uid => heroById(uid) && heroState(heroById(uid)) === 'ready'); if (!party.length || contractTaken()) return;
   const pack = {}; for (const k in ITEMS) { const n = Math.min(SAVE.pack[k] || 0, SAVE.items[k] || 0); pack[k] = n; SAVE.items[k] -= n; SAVE.pack[k] = 0; }
   const intel = !!SAVE.intel[SAVE.contract]; SAVE.intel[SAVE.contract] = false;
+  SAVE.contractDay = SAVE.day;
   RUN = { contract: SAVE.contract, map: genMap(), pos: null, visited: [], gold: 0, relics: [], drill: 0, hp: {}, party, leader: party.includes(SAVE.leader) ? SAVE.leader : party[0], pack, mats: {}, intel, xp: 0 };
   party.forEach(id => RUN.hp[id] = 1); save(); saveRun(); renderMap(); show('map');
 }

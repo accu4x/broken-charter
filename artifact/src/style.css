@@ -131,6 +131,7 @@ h2{font-family:var(--title);font-size:34px;line-height:.95;color:var(--parch)}
 .choice{display:grid;gap:4px;text-align:left;padding:12px}
 .choice small{font-weight:400;color:var(--muted);font-size:13px}
 .confirm{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:14px}
+.sleeprow{margin-top:10px;justify-content:flex-end}
 
 .mats{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:12px;font-size:13px;color:var(--muted)}
 .mat{display:inline-flex;align-items:center;gap:5px}
