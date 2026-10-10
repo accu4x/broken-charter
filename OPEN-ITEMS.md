@@ -5,7 +5,7 @@ Keep entries dated. **Correct, don't overwrite:** when a decision is superseded,
 date and a pointer to what replaced it. Numbers are stable IDs, not priority.
 
 _Last updated: 2026-10-09 (repo pushed, item 13; next build agreed, items 14–16; items 17 and 18
-resolved; board refresh set, item 15; progression and polish planned, items 25–45; the hall build ordered, items 46–48; Instinct and mastery carry-over, items 49–50). Before that:
+resolved; board refresh set, item 15; progression and polish planned, items 25–45; the hall build ordered, items 46–48; Instinct and mastery carry-over, items 49–50; a preview per pull request, item 51). Before that:
 2026-10-08 (items 1–12, the first three builds)._
 
 ## The artifact
@@ -13,9 +13,12 @@ resolved; board refresh set, item 15; progression and polish planned, items 25�
 | Name | URL | Capabilities | Sharing |
 |---|---|---|---|
 | **Broken Charter** | https://claude.ai/artifact/4kQSr4xjDXpF7DrSCUAZGX | none | Private; Dan shares it by link when he chooses (item 12) |
+| **Broken Charter Preview** | https://claude.ai/artifact/Qv5E9fyQFyKCybBrR8JzRx | none | Private. Each open pull request's build, for Dan to play before merging (item 51) |
 
 - Built from `artifact/src/` by `node artifact/build.mjs`. Always republish to this URL: player
   saves are tied to it.
+- **The preview** gets every pull request's build before Dan merges it, with its `<title>` set to
+  "Broken Charter Preview". It keeps its own save, apart from the live game's.
 - **Version 4, 2026-10-09:** game days, Sleep, one contract a day, the v3 save and resuming a
   fight after a reload. Published by Cowork from the working tree (not yet merged), after a rebuild
   from source matched `artifact/dist/` and `smoke.py` passed. *Merged 2026-10-09 as `a1e4523`
@@ -195,6 +198,10 @@ record what Dan decided; the spec marks everything else as proposed.
 48. **2026-10-09: Five classes and Wolfkin fold into the hall build** (Dan: yes), as their own pull
     request after the questline and before the fresh save is published, so nothing needs
     migrating. Moves that part of spec phase 4b forward; trials, Rites and milestones stay in 4b.
+51. **2026-10-10: A preview for every pull request** (Dan). Each pull request's build is published
+    to the private preview artifact (table above) when the pull request opens or changes, so Dan
+    can play it on his phone without touching his guild. The live URL still gets only merged
+    builds.
 49. **2026-10-10: Wolfkin Instinct is approved:** a wolfkin is never ambushed (Dan), so
     `lore/WORLD.md`'s "Nothing ambushes a wolfkin" stands as canon. The damage numbers stay
     proposals for the simulator.

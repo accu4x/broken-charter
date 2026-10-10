@@ -72,7 +72,9 @@ node artifact/test/leak.test.cjs --dir artifact/dist
 ```
 
 Publish `artifact/dist/broken-charter.html` to the artifact URL in `OPEN-ITEMS.md`, always to the
-same URL so players keep their saves. The artifact declares no capabilities: progress lives in
+same URL so players keep their saves. Only merged builds go live. Every pull request's build goes to
+the **preview** artifact (also in `OPEN-ITEMS.md`) first, titled "Broken Charter Preview", so Dan
+can play it before merging (item 51). The artifact declares no capabilities: progress lives in
 the player's browser (`localStorage`, keys `bc.*`).
 
 ## Save keys
