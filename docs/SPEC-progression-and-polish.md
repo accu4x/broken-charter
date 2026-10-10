@@ -131,7 +131,7 @@ battle renders with the grain and bloom passes skipped.
 | **Elf** | Swiftness | +4 SPD, rising to +10 | **First Light:** +25% damage on their first turn each fight |
 | **Dwarf** | Stoneblood | +8% HP and −4 SPD, rising to +20% HP and no SPD penalty | **Unshaken:** can't be stunned |
 | **Orc** | Bloodrage | +6% ATK, rising to +15% | **Fury:** +20% damage below half health |
-| **Wolfkin** | Instinct | Never ambushed; +10% damage to bleeding enemies, rising to +25% | **Pack:** +5% damage for each other Wolfkin in the party |
+| **Wolfkin** | Instinct | Never ambushed (**decided**, item 49); +10% damage to bleeding enemies, rising to +25% | **Pack:** +5% damage for each other Wolfkin in the party |
 
 Wolfkin need a look in `looks.js`: a canine head on the humanoid rig (muzzle, ears, fur), in the
 same shading as the rest. Their skin tones are fur colours. Lizardkin stay a backlog idea, as
@@ -166,6 +166,9 @@ stacks with the subclass, so a Paladin Vanguard and a Paladin Slayer play differ
 | Ranger | **Marksman** (precision) | +15% crit damage | Aimed Shot can't be dodged and breaks DEF |
 | | **Trapper** (control) | Bleeds also slow the turn bar | Volley pushes back every enemy's turn |
 | | **Pathfinder** (scouting) | Party moves first in every fight; dispatches bring back more | Hunter's Mark marks all enemies |
+
+**Decided** (item 50): an upgrade to the base class's third skill carries over, in kind, to the
+subclass skill that replaces it.
 
 The Thief's burst focus is renamed **Cutthroat** (it was Assassin) so it doesn't clash with the
 Assassin subclass.
@@ -296,8 +299,8 @@ materials.
 - Subclass and mastery names are placeholders until Dan has played them.
 - The milestone costs, kinship thresholds and passive numbers are first guesses for the simulator.
 - Logistics (food and supplies) and the lords' politics are in `BACKLOG.md` for a later session.
-- **Mastery upgrades to the third skill.** Every subclass replaces the third skill, so the
-  upgrades to Sunder (Warlord), Backstab (Cutthroat), Arcane Lance (Arcanist), Benediction
-  (Shepherd) and Hunter's Mark (Pathfinder) never reach a level-10 hero, who always has a
-  subclass. Move those upgrades to a skill the hero keeps, or say how each carries over to the
-  subclass skill (found by Copilot on PR #3, 2026-10-10).
+- ~~**Mastery upgrades to the third skill.**~~ `[resolved 2026-10-10, item 50]` They carry over
+  to the subclass skill in that slot, in kind. Upgrades to Sunder (Warlord), Backstab
+  (Cutthroat), Arcane Lance (Arcanist), Benediction (Shepherd) and Hunter's Mark (Pathfinder)
+  apply to whichever skill the hero's subclass put in the third slot; design how each subclass
+  skill takes them alongside the 20 skills.

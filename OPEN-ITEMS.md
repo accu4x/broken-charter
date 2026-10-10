@@ -5,7 +5,7 @@ Keep entries dated. **Correct, don't overwrite:** when a decision is superseded,
 date and a pointer to what replaced it. Numbers are stable IDs, not priority.
 
 _Last updated: 2026-10-09 (repo pushed, item 13; next build agreed, items 14–16; items 17 and 18
-resolved; board refresh set, item 15; progression and polish planned, items 25–45; the hall build ordered, items 46–48). Before that:
+resolved; board refresh set, item 15; progression and polish planned, items 25–45; the hall build ordered, items 46–48; Instinct and mastery carry-over, items 49–50). Before that:
 2026-10-08 (items 1–12, the first three builds)._
 
 ## The artifact
@@ -167,7 +167,8 @@ record what Dan decided; the spec marks everything else as proposed.
     guild-wide, through five ranks.
 43. **2026-10-09: The fifth race is Wolfkin,** playable from day one (Dan: a race "I can play right
     away", not gnomes). Races: Human, Elf, Dwarf, Orc, Wolfkin. Passives proposed in the spec
-    (§2b); Wolfkin's rank V is a pack bonus that rewards all-Wolfkin parties.
+    (§2b); Wolfkin's rank V is a pack bonus that rewards all-Wolfkin parties. `[amended
+    2026-10-10: Instinct approved, item 49]`
 44. **2026-10-09: The daily load.** A contract, a class trial and a Rite every day, with longer
     sessions; the player can stop mid-day and come back (Dan).
 45. **2026-10-09: New regions need five legends:** a level-20 hero of each of the five classes.
@@ -185,6 +186,13 @@ record what Dan decided; the spec marks everything else as proposed.
 48. **2026-10-09: Five classes and Wolfkin fold into the hall build** (Dan: yes), as their own pull
     request after the questline and before the fresh save is published, so nothing needs
     migrating. Moves that part of spec phase 4b forward; trials, Rites and milestones stay in 4b.
+49. **2026-10-10: Wolfkin Instinct is approved:** a wolfkin is never ambushed (Dan), so
+    `lore/WORLD.md`'s "Nothing ambushes a wolfkin" stands as canon. The damage numbers stay
+    proposals for the simulator.
+50. **2026-10-10: Mastery upgrades carry over to the subclass skill** (Dan). A level-10 focus whose
+    upgrade names the base class's third skill (Warlord, Cutthroat, Arcanist, Shepherd,
+    Pathfinder) upgrades whatever skill the hero's subclass put in that slot, in kind. How each
+    of the 20 subclass skills takes it is designed with them, in phase 4b.
 
 ## Open questions
 
