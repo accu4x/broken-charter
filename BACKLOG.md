@@ -8,15 +8,17 @@ Ideas and the long-game direction. Decisions live in `OPEN-ITEMS.md`.
   has its own threat and contract board; each branch upgrades on its own, with local specialties
   (a marsh branch trains venom-resistant scouts). The old imperial capital, the Necromancer's
   heartland, is the last region.
-- **Retired veterans run branches.** A veteran retires to become a branch guildmaster, so old
+- **Retired veterans run branches.** `[2026-10-09: proposed as the level-20 Legend milestone, OPEN-ITEMS item 30]` A veteran retires to become a branch guildmaster, so old
   favourites stay useful and retirement reads as a promotion.
 - **Rival guilds.** Mostly competitors for contracts, recruits, prestige and lords' favour.
 - **Cross-guild missions.** Big set pieces (a goblin horde, a Necromancer rising) where rivals
   team up. How you perform changes your standing with them afterwards.
-- **The lords' politics.** Contracts can quietly favour one house over another. Aid, hinder or
+- **The lords' politics.** `[2026-10-09: Dan wants to plan this in a later session]` Contracts can quietly favour one house over another. Aid, hinder or
   ignore their schemes; each lord remembers. Their fortunes shift the map, sponsor expansion and
   decide who takes the empty throne. Story progression follows from it.
 - **Lizardkin diplomacy.** Contracts that ask whose side you are on; lizardkin recruits later.
+- **Logistics.** `[added 2026-10-09]` Managing the guild's food and supplies: provisions for
+  expeditions, upkeep for the roster, shortages that force choices (Dan, for a later session).
 - **A local sandbox.** Your realm lives in your browser and your choices permanently shape it.
   No shared economy.
 
