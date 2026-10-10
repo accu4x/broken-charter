@@ -1,13 +1,13 @@
 /* ================= BATTLE ENGINE ================= */
 const cv = $('#cv'); const cx = cv.getContext('2d');
 const V = { S: 3, aw: 360, ah: 216, dpr: 1 };
-const B = { units: [], over: true, turn: null, auto: store.get('bc.auto', false), speed: store.get('bc.speed', 1), awaiting: null, pending: null, popups: [], parts: [], projs: [], fx: [], dl: [], shake: 0, hitstop: 0, setting: 'crypt', scene: null, t: 0, hover: null, cam: { x: 180, y: 108, z: 1 }, camT: { x: 180, y: 108, z: 1 }, punch: 0, mods: {} };
+const B = { units: [], over: true, turn: null, auto: store.get('bc.auto', false), speed: PREFS.speed, awaiting: null, pending: null, popups: [], parts: [], projs: [], fx: [], dl: [], shake: 0, hitstop: 0, setting: 'crypt', scene: null, t: 0, hover: null, cam: { x: 180, y: 108, z: 1 }, camT: { x: 180, y: 108, z: 1 }, punch: 0, mods: {} };
 const tweens = [];
 function tween(dur, fn, ease) { const d = Math.max(1, dur / B.speed); return new Promise(res => tweens.push({ t0: performance.now(), d, fn, ease: ease || (k => 1 - Math.pow(1 - k, 3)), res })); }
 const wait = ms => tween(ms, () => {});
 const now = () => performance.now();
 
-let lm = null, lmx = null, grain = null;
+let lm = null, lmx = null, lmq = null, lmqx = null, grain = null;
 function sizeCanvas() {
   const wrap = $('#stage'); const cw = wrap.clientWidth; if (!cw) return;
   const dpr = window.devicePixelRatio || 1; const dev = cw * dpr;
@@ -61,7 +61,7 @@ function buildBattle(comp, layer, kind) {
 function fr(u) { return SPR[u.key].idle0; }
 function popup(u, text, color, big) { const n = B.popups.filter(p => p.u === u && p.t < 450).length; B.popups.push({ u, x: u.x + u.ox, y: u.y - fr(u).h - 8 - n * 9, text, color, big, t: -n * 90 }); }
 function part(o) { B.parts.push(Object.assign({ vx: 0, vy: 0, g: 0, drag: 1, life: 30, sz: 1 }, o, { max: o.life || 30 })); }
-function burst(x, y, color, n, spread, up, o) { if (REDUCED) n = Math.ceil(n / 3); for (let i = 0; i < n; i++) part(Object.assign({ x, y, vx: (rnd() - .5) * spread, vy: (rnd() - .5) * spread - (up || 0), g: up ? -.01 : .07, life: 22 + rnd() * 26, c: Array.isArray(color) ? pick(color) : color }, o || {})); }
+function burst(x, y, color, n, spread, up, o) { if (REDUCED) n = Math.ceil(n / 3); else if (PREFS.light) n = Math.ceil(n / 2); for (let i = 0; i < n; i++) part(Object.assign({ x, y, vx: (rnd() - .5) * spread, vy: (rnd() - .5) * spread - (up || 0), g: up ? -.01 : .07, life: 22 + rnd() * 26, c: Array.isArray(color) ? pick(color) : color }, o || {})); }
 function center(u) { return [u.x + u.ox, u.y - fr(u).h * .5 + u.oy]; }
 const FXCOL = { fire: ['#ff8a2a', '#ffd06a', '#e0401c'], holy: ['#fff4c8', '#f4cf6a', '#ffffff'], arcane: ['#9ab8ff', '#6a7cff', '#e0d4ff'], nature: ['#8ed06a', '#3e7a34', '#c8f0a0'], dark: ['#7a5ac8', '#3a2a5a', '#b08ae0'], venom: ['#a8f06a', '#b47ce0', '#5a8a3a'], arrow: ['#d8cfb4'], arrows: ['#d8cfb4'], stone: ['#8a8a92'], heal: ['#7fd08a', '#c8f7d0', '#ffffff'], buff: ['#e8b85a', '#fff0b8'], smoke: ['#6a6670', '#9a96a0', '#4a4650'], quake: ['#5a4228', '#8a6a42'], phys: ['#ffffff', '#ffe0b0'] };
 const LIGHTC = { fire: [255, 130, 50], holy: [255, 230, 160], arcane: [120, 150, 255], nature: [130, 220, 110], dark: [140, 90, 220], venom: [150, 240, 100], heal: [130, 230, 150], buff: [255, 200, 110], phys: [255, 220, 180] };
@@ -209,7 +209,7 @@ cv.addEventListener('keydown', e => {
 });
 function updateCtrls() { $('#autoBtn').textContent = 'Auto ' + (B.auto ? 'on' : 'off'); $('#autoBtn').classList.toggle('on', B.auto); $('#speedBtn').textContent = 'Speed ' + B.speed + '×'; $('#speedBtn').classList.toggle('on', B.speed > 1); }
 $('#autoBtn').onclick = () => { B.auto = !B.auto; store.set('bc.auto', B.auto); updateCtrls(); SND.fx('blip'); if (B.auto && B.awaiting) resolvePlayer(aiChoose(B.awaiting.u)); };
-$('#speedBtn').onclick = () => { B.speed = B.speed >= 3 ? 1 : B.speed + 1; store.set('bc.speed', B.speed); updateCtrls(); SND.fx('blip'); };
+$('#speedBtn').onclick = () => { B.speed = B.speed >= 3 ? 1 : B.speed + 1; PREFS.speed = B.speed; savePrefs(); updateCtrls(); SND.fx('blip'); };
 function renderOrder() {
   const box = $('#order'); box.innerHTML = ''; const live = B.units.filter(u => u.alive); if (!live.length) return;
   const bars = new Map(live.map(u => [u, u.bar])); const seq = []; if (B.turn) seq.push(B.turn);
@@ -350,12 +350,23 @@ async function summon(u, key) {
 
 /* ================= RENDER ================= */
 let last = performance.now();
+// Light graphics: the first battle that runs under 40 fps for three seconds turns it on, once.
+const FPS = { t: 0, n: 0 };
+function watchFps(raw) {
+  if (raw > 1000) return; // a longer gap is a hidden tab, not a slow frame
+  FPS.t += raw; FPS.n++; if (FPS.t < 3000) return;
+  PREFS.lightChecked = true;
+  if (!PREFS.light && FPS.n / (FPS.t / 1000) < 40) { PREFS.light = true; toast('Battles were running slowly, so light graphics are on. You can change it in Settings.'); }
+  savePrefs();
+}
+// Light graphics keeps the six strongest lights.
+function capLights(L) { if (PREFS.light && L.length > 6) { L.sort((a, b) => b.i * b.r - a.i * a.r); L.length = 6; } return L; }
 function frame(t) {
-  const dt = Math.min(50, t - last); last = t; B.t += dt;
+  const raw = t - last, dt = Math.min(50, raw); last = t; B.t += dt;
   let frozen = false;
   if (B.hitstop > 0) { B.hitstop -= dt; frozen = true; for (const tw of tweens) tw.t0 += dt; }
   for (let i = tweens.length - 1; i >= 0; i--) { const tw = tweens[i]; const k = clamp((t - tw.t0) / tw.d, 0, 1); tw.fn(tw.ease(k)); if (k >= 1) { tweens.splice(i, 1); tw.res(); } }
-  if (!$('section[data-screen="battle"]').hidden && B.scene) draw(frozen ? 0 : dt, dt);
+  if (!$('section[data-screen="battle"]').hidden && B.scene) { draw(frozen ? 0 : dt, dt); if (!PREFS.lightChecked) watchFps(raw); }
   else if (!$('section[data-screen="guild"]').hidden) drawHall(dt);
   requestAnimationFrame(frame);
 }
@@ -407,10 +418,13 @@ function draw(dt, rdt) {
   c.globalAlpha = 1;
   drawParts(c, dt, false);
   // LIGHTING
-  const lw = lm.width, lh = lm.height, kx = lw / W;
-  lmx.setTransform(1, 0, 0, 1, 0, 0); lmx.globalCompositeOperation = 'source-over'; lmx.fillStyle = `rgb(${sc.ambient.join(',')})`; lmx.fillRect(0, 0, lw, lh);
-  lmx.globalCompositeOperation = 'lighter';
-  const addL = (x, y, r, col, i) => { if (i <= 0.01) return; const g = lmx.createRadialGradient(x * kx, y * kx, 0, x * kx, y * kx, r * kx); g.addColorStop(0, rgba(col, Math.min(1, i))); g.addColorStop(.45, rgba(col, Math.min(1, i) * .42)); g.addColorStop(1, rgba(col, 0)); lmx.fillStyle = g; lmx.fillRect((x - r) * kx, (y - r) * kx, r * 2 * kx, r * 2 * kx); };
+  const lite = PREFS.light; B.passes = { grain: !REDUCED && !lite, bloom: !lite, fog: !lite };
+  if (lite && (!lmq || lmq.width !== Math.max(1, Math.round(W / 4)))) [lmq, lmqx] = mk(W / 4, H / 4);
+  const LM = lite ? lmq : lm, LX = lite ? lmqx : lmx; // light graphics: a quarter-resolution light map
+  const lw = LM.width, lh = LM.height, kx = lw / W;
+  LX.setTransform(1, 0, 0, 1, 0, 0); LX.globalCompositeOperation = 'source-over'; LX.fillStyle = `rgb(${sc.ambient.join(',')})`; LX.fillRect(0, 0, lw, lh);
+  LX.globalCompositeOperation = 'lighter';
+  const addL = (x, y, r, col, i) => { if (i <= 0.01) return; const g = LX.createRadialGradient(x * kx, y * kx, 0, x * kx, y * kx, r * kx); g.addColorStop(0, rgba(col, Math.min(1, i))); g.addColorStop(.45, rgba(col, Math.min(1, i) * .42)); g.addColorStop(1, rgba(col, 0)); LX.fillStyle = g; LX.fillRect((x - r) * kx, (y - r) * kx, r * 2 * kx, r * 2 * kx); };
   addL(W / 2, H * .82, W * .62, sc.stage, .7);
   const hs = aliveSide('hero'); if (hs.length) { const hx = hs.reduce((a, u) => a + u.x, 0) / hs.length; addL(hx, H * .76, W * .34, [255, 200, 160], .5); }
   const lights = [];
@@ -420,8 +434,9 @@ function draw(dt, rdt) {
   for (let i = B.dl.length - 1; i >= 0; i--) { const d = B.dl[i]; d.life -= dt * .06; if (d.life <= 0) { B.dl.splice(i, 1); continue; } lights.push({ x: d.x, y: d.y, r: d.r, c: d.c, i: d.i * (d.life / d.max), bloom: .6 }); }
   if (sc.wisps) for (const w of sc.wisps) { w.cx = w.x + Math.sin(t * .0007 + w.p) * 22; w.cy = w.y + Math.sin(t * .0013 + w.p * 2) * 6; lights.push({ x: w.cx, y: w.cy, r: 42, c: [150, 255, 200], i: .55 + Math.sin(t * .004 + w.p) * .15, bloom: .7 }); }
   if (B.turn && B.turn.alive) lights.push({ x: B.turn.x, y: B.turn.y - 6, r: 34, c: [255, 220, 170], i: .35 });
+  capLights(lights);
   for (const L of lights) addL(L.x, L.y, L.r, L.c, L.i);
-  setT(1); c.globalCompositeOperation = 'multiply'; c.imageSmoothingEnabled = true; c.drawImage(lm, 0, 0, W, H); c.globalCompositeOperation = 'source-over'; c.imageSmoothingEnabled = false;
+  setT(1); c.globalCompositeOperation = 'multiply'; c.imageSmoothingEnabled = true; c.drawImage(LM, 0, 0, W, H); c.globalCompositeOperation = 'source-over'; c.imageSmoothingEnabled = false;
   // rim light + flashes
   c.globalCompositeOperation = 'lighter';
   for (const u of B.units) {
@@ -456,13 +471,15 @@ function draw(dt, rdt) {
   if (sc.wisps) for (const w of sc.wisps) { glow(c, w.cx, w.cy, 10, [150, 255, 200], .5); c.fillStyle = '#e8fff0'; c.fillRect(Math.round(w.cx) - 1, Math.round(w.cy) - 1, 2, 2); }
   if (sc.key === 'crypt') { if (AMB.flies.length < 22) AMB.flies.push({ x: rnd() * W, y: rnd() * H, v: .02 + rnd() * .03, p: rnd() * 6 }); c.fillStyle = 'rgba(255,220,180,.28)'; AMB.flies.forEach(f => { f.y -= f.v * dt * .1; f.x += Math.sin(t * .001 + f.p) * .03 * dt / 16; if (f.y < 0) { f.y = H; f.x = rnd() * W; } c.fillRect(Math.round(f.x), Math.round(f.y), 1, 1); }); }
   // bloom on strong lights
-  for (const L of lights) if (L.bloom) glow(c, L.x, L.y, L.r * .35, L.c, .22 * L.bloom * Math.min(1, L.i));
+  if (!lite) for (const L of lights) if (L.bloom) glow(c, L.x, L.y, L.r * .35, L.c, .22 * L.bloom * Math.min(1, L.i));
   c.globalCompositeOperation = 'source-over';
   // foreground (depth-blurred) + fog
   setT(1.25); c.imageSmoothingEnabled = true; c.drawImage(sc.fg, -24, 0, W + 48, H); setT(1);
+  if (!lite) {
   if (!AMB.fog.length) for (let i = 0; i < (sc.key === 'mire' ? 7 : 4); i++) AMB.fog.push({ x: rnd() * W, y: H * (.5 + rnd() * .45), r: 30 + rnd() * 45, v: .004 + rnd() * .006 });
   const fogA = sc.key === 'mire' ? .16 : .07;
   AMB.fog.forEach(f => { f.x += f.v * rdt; if (f.x - f.r > W) f.x = -f.r; const g = c.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r); g.addColorStop(0, sc.fog + fogA + ')'); g.addColorStop(1, sc.fog + '0)'); c.fillStyle = g; c.fillRect(f.x - f.r, f.y - f.r, f.r * 2, f.r * 2); });
+  }
   c.imageSmoothingEnabled = false;
   // UI in world
   drawUnitUI(c, t, rdt);
@@ -472,7 +489,7 @@ function draw(dt, rdt) {
   c.globalCompositeOperation = 'source-over';
   const vg = c.createRadialGradient(cv.width / 2, cv.height * .55, cv.height * .3, cv.width / 2, cv.height * .55, cv.width * .68); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(3,2,5,.78)'); c.fillStyle = vg; c.fillRect(0, 0, cv.width, cv.height);
   if (!grain) grain = makeGrain();
-  if (!REDUCED) { c.globalCompositeOperation = 'overlay'; c.globalAlpha = .09; const pat = c.createPattern(grain, 'repeat'); c.save(); c.translate(Math.floor(rnd() * 128), Math.floor(rnd() * 128)); c.fillStyle = pat; c.fillRect(-128, -128, cv.width + 256, cv.height + 256); c.restore(); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; }
+  if (B.passes.grain) { c.globalCompositeOperation = 'overlay'; c.globalAlpha = .09; const pat = c.createPattern(grain, 'repeat'); c.save(); c.translate(Math.floor(rnd() * 128), Math.floor(rnd() * 128)); c.fillStyle = pat; c.fillRect(-128, -128, cv.width + 256, cv.height + 256); c.restore(); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; }
 }
 function glow(c, x, y, r, col, a) { if (a <= 0) return; const g = c.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, rgba(col, a)); g.addColorStop(1, rgba(col, 0)); c.fillStyle = g; c.fillRect(x - r, y - r, r * 2, r * 2); }
 function drawParts(c, dt, emissive) {

@@ -19,7 +19,7 @@ const POST_SPOTS = { chaplain: [48, 106], recruiter: [100, 104], quartermaster: 
 const HALL = { scene: null, S: 1, cw: 0, t: 0, embers: [], people: [], fade: null };
 const HALL_FADE = [350, 250, 600]; // Sleep: fade to black, hold, fade back in (ms)
 const hcv = $('#hallCv'), hcx = hcv.getContext('2d');
-let hlm = null, hlx = null;
+let hlm = null, hlx = null, hlq = null, hlqx = null;
 
 function stationLocked(s) { return false; }
 
@@ -176,27 +176,29 @@ function drawHall(dt) {
     c.drawImage(f.n, Math.round(p.x - f.ax), Math.round(p.y - f.ay));
   }
   // light map: warm ambient plus every lamp, multiplied over the room
-  if (!hlm) [hlm, hlx] = mk(HW / 2, HH / 2);
-  hlx.globalCompositeOperation = 'source-over'; hlx.fillStyle = 'rgb(56,44,42)'; hlx.fillRect(0, 0, HW / 2, HH / 2); hlx.globalCompositeOperation = 'lighter';
-  const lights = sc.lights.map(L => { const fl = L.fl != null && !REDUCED ? 1 + Math.sin(t * .011 + L.fl) * .1 + Math.sin(t * .037 + L.fl * 2) * .06 : 1; return { x: L.x, y: L.y, r: L.r * (.97 + fl * .03), c: L.c, i: L.i * fl, bloom: L.bloom }; });
-  for (const L of lights) { const g = hlx.createRadialGradient(L.x / 2, L.y / 2, 0, L.x / 2, L.y / 2, L.r / 2); g.addColorStop(0, rgba(L.c, Math.min(1, L.i))); g.addColorStop(.45, rgba(L.c, Math.min(1, L.i) * .42)); g.addColorStop(1, rgba(L.c, 0)); hlx.fillStyle = g; hlx.fillRect((L.x - L.r) / 2, (L.y - L.r) / 2, L.r, L.r); }
-  c.globalCompositeOperation = 'multiply'; c.imageSmoothingEnabled = true; c.drawImage(hlm, 0, 0, HW, HH); c.imageSmoothingEnabled = false;
+  const lite = PREFS.light, q = lite ? 4 : 2; // light graphics: a quarter-resolution light map
+  if (!hlm) { [hlm, hlx] = mk(HW / 2, HH / 2); [hlq, hlqx] = mk(HW / 4, HH / 4); }
+  const LM = lite ? hlq : hlm, LX = lite ? hlqx : hlx;
+  LX.globalCompositeOperation = 'source-over'; LX.fillStyle = 'rgb(56,44,42)'; LX.fillRect(0, 0, HW / q, HH / q); LX.globalCompositeOperation = 'lighter';
+  const lights = capLights(sc.lights.map(L => { const fl = L.fl != null && !REDUCED ? 1 + Math.sin(t * .011 + L.fl) * .1 + Math.sin(t * .037 + L.fl * 2) * .06 : 1; return { x: L.x, y: L.y, r: L.r * (.97 + fl * .03), c: L.c, i: L.i * fl, bloom: L.bloom }; }));
+  for (const L of lights) { const g = LX.createRadialGradient(L.x / q, L.y / q, 0, L.x / q, L.y / q, L.r / q); g.addColorStop(0, rgba(L.c, Math.min(1, L.i))); g.addColorStop(.45, rgba(L.c, Math.min(1, L.i) * .42)); g.addColorStop(1, rgba(L.c, 0)); LX.fillStyle = g; LX.fillRect((L.x - L.r) / q, (L.y - L.r) / q, L.r * 2 / q, L.r * 2 / q); }
+  c.globalCompositeOperation = 'multiply'; c.imageSmoothingEnabled = true; c.drawImage(LM, 0, 0, HW, HH); c.imageSmoothingEnabled = false;
   c.globalCompositeOperation = 'source-over';
   for (const f of sc.flames) drawFlame(c, f, t);
   // embers from the hearth and the forge, then bloom on the strong lights
   c.globalCompositeOperation = 'lighter';
-  if (!REDUCED && HALL.embers.length < 24 && rnd() < dt * .006) { const src = rnd() < .65 ? sc.hearth : sc.forge; HALL.embers.push({ x: src.x + (rnd() - .5) * src.w, y: src.y, vx: (rnd() - .5) * .1, vy: -.15 - rnd() * .2, life: 1 }); }
+  if (!REDUCED && HALL.embers.length < (lite ? 12 : 24) && rnd() < dt * (lite ? .003 : .006)) { const src = rnd() < .65 ? sc.hearth : sc.forge; HALL.embers.push({ x: src.x + (rnd() - .5) * src.w, y: src.y, vx: (rnd() - .5) * .1, vy: -.15 - rnd() * .2, life: 1 }); }
   for (let i = HALL.embers.length - 1; i >= 0; i--) {
     const e = HALL.embers[i]; e.x += e.vx * dt * .06 + Math.sin(t * .003 + i) * .04; e.y += e.vy * dt * .06; e.life -= dt * .0006;
     if (e.life <= 0 || e.y < 0) { HALL.embers.splice(i, 1); continue; }
     glow(c, e.x, e.y, 3, [255, 150, 60], .35 * e.life); c.fillStyle = rgba([255, 200, 110], e.life); c.fillRect(Math.round(e.x), Math.round(e.y), 1, 1);
   }
-  for (const L of lights) if (L.bloom) glow(c, L.x, L.y, L.r * .35, L.c, .2 * L.bloom * Math.min(1, L.i));
+  if (!lite) for (const L of lights) if (L.bloom) glow(c, L.x, L.y, L.r * .35, L.c, .2 * L.bloom * Math.min(1, L.i));
   c.globalCompositeOperation = 'source-over';
   // screen space: vignette, grain, and the fade to black when the guild sleeps
   c.setTransform(1, 0, 0, 1, 0, 0); const w = hcv.width, h = hcv.height;
   const vg = c.createRadialGradient(w / 2, h * .55, h * .35, w / 2, h * .55, w * .62); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(3,2,5,.72)'); c.fillStyle = vg; c.fillRect(0, 0, w, h);
-  if (!REDUCED) { if (!grain) grain = makeGrain(); c.globalCompositeOperation = 'overlay'; c.globalAlpha = .08; c.save(); c.translate(Math.floor(rnd() * 128), Math.floor(rnd() * 128)); c.fillStyle = c.createPattern(grain, 'repeat'); c.fillRect(-128, -128, w + 256, h + 256); c.restore(); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; }
+  if (!REDUCED && !lite) { if (!grain) grain = makeGrain(); c.globalCompositeOperation = 'overlay'; c.globalAlpha = .08; c.save(); c.translate(Math.floor(rnd() * 128), Math.floor(rnd() * 128)); c.fillStyle = c.createPattern(grain, 'repeat'); c.fillRect(-128, -128, w + 256, h + 256); c.restore(); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; }
   if (HALL.fade) {
     const f = HALL.fade, [up, hold, down] = HALL_FADE; f.t += dt;
     const a = f.t < up ? f.t / up : f.t < up + hold ? 1 : 1 - (f.t - up - hold) / down;

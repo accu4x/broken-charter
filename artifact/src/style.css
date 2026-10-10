@@ -154,6 +154,13 @@ h2{font-family:var(--title);font-size:34px;line-height:.95;color:var(--parch)}
 .sbadge{position:absolute;right:-4px;top:-4px;min-width:16px;height:16px;padding:0 4px;display:grid;place-items:center;font-family:var(--label);font-size:9px;color:#fff3da;background:var(--blood);border:1px solid #e0806a;border-radius:8px}
 @media (min-width:600px){.slabel{opacity:.82}}
 .sheet{display:grid;gap:14px}
+.gear{display:inline-block;width:12px;height:12px;margin-right:7px;vertical-align:-1px;border:3px dotted var(--gold);border-radius:50%;box-shadow:inset 0 0 0 2px #16100b,inset 0 0 0 4px var(--gold)}
+.setrows{display:grid;gap:12px}
+.setrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;font-size:15px}
+.setrow input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--gold);min-height:28px}
+.setrow .muted{display:block;font-size:13px}
+.seg{display:flex;gap:6px}
+.toast{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:50;width:min(420px,calc(100% - 32px));padding:12px 14px;font-size:14px;background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--brass);border-radius:3px;box-shadow:0 10px 26px rgba(0,0,0,.7)}
 .sheet.slide{animation:sheetUp .24s cubic-bezier(.2,.9,.3,1)}
 @keyframes sheetUp{from{opacity:0;transform:translateY(28px)}}
 .sheetbar{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:2px 2px 0;border-bottom:1px solid var(--brass-2);padding-bottom:6px}
