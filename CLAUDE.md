@@ -12,7 +12,8 @@ as a single-file **Claude artifact**, built from this folder.
 3. `lore/WORLD.md`: the world, the factions, the regions.
 4. `OPEN-ITEMS.md`: decisions so far, dated, the open questions, and the agreed next build.
 5. `BACKLOG.md`: what comes after.
-6. `docs/SPEC-progression-and-polish.md`: the planned work after the guild-hall build.
+6. `docs/SPEC-progression-and-polish.md`: the progression and polish plan. Phase 1 (settings) and
+   the five classes and Wolfkin ride with the guild-hall build (`OPEN-ITEMS.md` items 46–48).
 
 ## The rules that matter most
 

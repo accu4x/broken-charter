@@ -1,8 +1,13 @@
 # SPEC: progression and polish pass
 
-_Planning session with Dan, 2026-10-09. For Claude Code, after the guild-hall build
-(`OPEN-ITEMS.md` items 14–16). Decisions are logged in `OPEN-ITEMS.md` items 25–45; this file holds the
+_Planning session with Dan, 2026-10-09. For Claude Code, alongside and after the guild-hall build
+(`OPEN-ITEMS.md` items 14–16). Decisions are logged in `OPEN-ITEMS.md` items 25–48; this file holds the
 detail. Where they disagree, OPEN-ITEMS wins._
+
+_`[amended 2026-10-09: items 46–48]` Two parts now ride with the hall build, in its pull-request
+order: **phase 1** (settings, light graphics, subclass at level 5) lands before the questline, and
+the **five classes and Wolfkin** (§2a, and the races of §2b) land after it, before the fresh save
+is published. The rest of phase 4b stays where the table puts it._
 
 **How to read it.** Each section says what is **decided** (Dan said so) and what is **proposed**
 (a starting point Claude drafted; Dan has not signed off). Build only what is decided, and ask
@@ -20,7 +25,7 @@ it sits there because it needs the simulator to tune, and Dan may move it.
 | 2 | Combat rules split out, balance simulator and balance tests (§3) | Every later combat change gets tuned with numbers |
 | 3 | Visible counters and bestiary (§4); boss phases and tells (§5) | Most change to how fights play |
 | 4 | Elite modifiers (§6); run summary (§7) | Variety and story |
-| 4b | Five classes and the 20-subclass grid (§2a); the game week, class trials and racial Rites (§2b); mastery (10), renown (15), legend (20) and new regions (§2c) | Needs the simulator; new since the order was agreed |
+| 4b | ~~Five classes and the 20-subclass grid (§2a)~~ (moved into the hall build, item 48); the game week, class trials and racial Rites (§2b); mastery (10), renown (15), legend (20) and new regions (§2c) | Needs the simulator; new since the order was agreed |
 | 5 | Subclass and mastery looks, music (§8) | Flavour |
 
 Phase 4b changes the class list (six to five) and the races (Wolfkin joins). The guild-hall
@@ -76,12 +81,14 @@ battle renders with the grain and bloom passes skipped.
     a control effect.
   - **Support:** the new skill heals, cleanses or buffs allies; the Bard's are songs that push
     allies' turns forward.
-- Each subclass replaces the base class's third skill, as today. Reuse the built skills where the
-  name survives (Paladin, Spellblade, Duelist, Trickster, Battlemage, Illusionist, Theurge,
-  Templar, Oracle, Inquisitor, Warden); design the rest to the flavour rule.
+- Each subclass replaces the base class's third skill, as today. Reuse a built skill only where
+  the base and the borrowed class are unchanged: **Paladin, Spellblade, Trickster, Battlemage,
+  Illusionist, Templar.** Duelist and Theurge swap direction (Duelist is now a Warrior, Theurge a
+  Priest), and Oracle, Inquisitor and Warden change flavour, so those five keep the name but get
+  a new skill. Design them and the rest to the flavour rule.
 - **Migration, if a guild already exists:** druid heroes become Rangers, and a druid who had a
-  subclass takes the Druid subclass; heroes keep any subclass whose name survives; the rest get
-  their subclass choice back for free.
+  subclass takes the Druid subclass; heroes keep a subclass only where its base and borrowed
+  class are unchanged (the six above); the rest get their subclass choice back for free.
 
 ### 2b. The game week, class trials and racial Rites
 
@@ -163,7 +170,9 @@ stacks with the subclass, so a Paladin Vanguard and a Paladin Slayer play differ
 The Thief's burst focus is renamed **Cutthroat** (it was Assassin) so it doesn't clash with the
 Assassin subclass.
 
-**Proposed: Renown (15) and Legend (20).**
+**Renown (15) and Legend (20).** The mechanics below are **decided** (item 35: Dan, "yes"); the
+numbers in them (+5%, +1 slot, the wings' bonuses, the yard caps) stay **proposed** until the
+simulator tunes them.
 - **Renown:** a guild-wide passive that follows the hero's focus. A Pyromancer gives every hero +5%
   fire damage, a Saint +5% resurrection odds, a Pathfinder +1 dispatch slot. It lasts only while
   that hero lives.
@@ -276,7 +285,7 @@ materials.
 
 **Proposed.**
 - **Subclass looks:** each of the 20 subclasses changes the sprite (trim, cape, weapon or glow).
-  For example, holy trim and a white tabard for a Paladin, furs and a bare arm for a Barbarian,
+  For example, holy trim and a white tabard for a Paladin, furs and a bare arm for a Berserker,
   a rune-lit blade for a Spellblade. Done as look deltas in `looks.js`, applied when a hero's
   sprite is built.
 - **Mastery:** a faint aura in the focus's colour in battle, and a mark on the roster card.
@@ -287,3 +296,8 @@ materials.
 - Subclass and mastery names are placeholders until Dan has played them.
 - The milestone costs, kinship thresholds and passive numbers are first guesses for the simulator.
 - Logistics (food and supplies) and the lords' politics are in `BACKLOG.md` for a later session.
+- **Mastery upgrades to the third skill.** Every subclass replaces the third skill, so the
+  upgrades to Sunder (Warlord), Backstab (Cutthroat), Arcane Lance (Arcanist), Benediction
+  (Shepherd) and Hunter's Mark (Pathfinder) never reach a level-10 hero, who always has a
+  subclass. Move those upgrades to a skill the hero keeps, or say how each carries over to the
+  subclass skill (found by Copilot on PR #3, 2026-10-10).
