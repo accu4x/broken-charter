@@ -1,0 +1,15 @@
+# Stay local, never committed
+HANDOVER-*.md
+
+# Built files: every build is reproducible from artifact/src/
+artifact/dist/
+
+# Tooling and OS
+node_modules/
+__pycache__/
+.wrangler/
+.dev.vars
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
