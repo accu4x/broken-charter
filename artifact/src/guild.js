@@ -83,11 +83,13 @@ function desperate() { return SAVE.roster.filter(h => heroState(h) !== 'chapel')
 /* ---------- day rollover: Sleep, dispatch returns, post locks ---------- */
 const contractTaken = () => SAVE.contractDay === SAVE.day;
 function sleep() {
-  if (RUN) return;
+  if (RUN || HALL.fade) return;
   SAVE.day++; GUI.confirm = null; SAVE.note = '';
   collectDispatch();
   if (refreshBoard()) SAVE.reports.push('New faces are waiting on the recruit board.');
-  SND.fx('heal'); renderGuild();
+  save(); SND.fx('heal');
+  // The day turns at once; the hall shows it once the fade has reached black.
+  if (REDUCED) renderGuild(); else { HALL.fade = { t: 0 }; setTimeout(renderGuild, HALL_FADE[0]); }
 }
 function collectDispatch() {
   const t = SAVE.day; const back = SAVE.dispatch.filter(d => d.back <= t); if (!back.length) return;
@@ -104,7 +106,7 @@ function collectDispatch() {
 }
 
 /* ================= SCREENS ================= */
-function show(name) { document.querySelectorAll('section[data-screen]').forEach(s => s.hidden = s.dataset.screen !== name); window.scrollTo(0, 0); if (name === 'battle') requestAnimationFrame(sizeCanvas); }
+function show(name) { document.querySelectorAll('section[data-screen]').forEach(s => s.hidden = s.dataset.screen !== name); window.scrollTo(0, 0); if (name === 'battle') requestAnimationFrame(sizeCanvas); if (name === 'guild') requestAnimationFrame(sizeHall); }
 function portrait(id, size) {
   const c = document.createElement('canvas'); c.width = 30; c.height = 30; c.className = 'px';
   const f = SPR[id].idle0; const x = c.getContext('2d'); x.imageSmoothingEnabled = false; x.drawImage(f.n, f.ax - 14, Math.max(0, f.top - 1), 30, 30, 0, 0, 30, 30);
@@ -115,8 +117,9 @@ function iconCanvas(kind, size) { const c = document.createElement('canvas'); c.
 const THUMBS = {}; function thumb(k) { return THUMBS[k] || (THUMBS[k] = sceneThumb(k)); }
 
 /* ================= GUILD HALL ================= */
-const GUI = { tab: store.get('bc.tab', 'hall'), forgeHero: null, subFor: null, confirm: null, dMission: 'gather:crypt' };
-const TABS = [['hall', 'Hall'], ['roster', 'Roster'], ['recruit', 'Recruit'], ['forge', 'Forge'], ['dispatch', 'Dispatch'], ['posts', 'Posts'], ['chapel', 'Chapel']];
+// GUI.tab is the open station's panel (a key of PANELS), or null when the sheet is closed.
+const GUI = { tab: store.get('bc.tab', 'hall'), forgeHero: null, subFor: null, confirm: null, dMission: 'gather:crypt', slide: true };
+if (GUI.tab !== null && !STATIONS.some(s => s.tab === GUI.tab)) GUI.tab = 'hall';
 function rankName() { const d = SAVE.done; return d >= 8 ? 'Charter Bastion' : d >= 4 ? 'Charter House' : d >= 1 ? 'Charter Lodge' : 'Charter Hall'; }
 function renderGuild() {
   collectDispatch(); refreshBoard();
@@ -133,14 +136,39 @@ function renderGuild() {
   $('#musicBtn').textContent = 'Music ' + (SND.musicOn ? 'on' : 'off'); $('#musicBtn').classList.toggle('on', SND.musicOn);
   $('#sfxBtn').textContent = 'Sound ' + (SND.sfxOn ? 'on' : 'off'); $('#sfxBtn').classList.toggle('on', SND.sfxOn);
   $('#resumeWin').hidden = !RUN; if (RUN) $('#resumeName').textContent = SETTINGS[RUN.contract].name;
-  const badges = { recruit: '', dispatch: SAVE.reports.length ? '•' : '', chapel: SAVE.chapel.length ? String(SAVE.chapel.length) : '', hall: SAVE.reports.length ? '•' : '' };
-  $('#tabs').innerHTML = TABS.map(([k, l]) => `<button type="button" class="tab ${GUI.tab === k ? 'on' : ''}" data-act="tab" data-k="${k}" role="tab" aria-selected="${GUI.tab === k}">${l}${badges[k] ? `<sup>${badges[k]}</sup>` : ''}</button>`).join('');
-  const P = $('#panel');
-  P.innerHTML = ({ hall: tabHall, roster: tabRoster, recruit: tabRecruit, forge: tabForge, dispatch: tabDispatch, posts: tabPosts, chapel: tabChapel })[GUI.tab]();
+  updateStations({ dispatch: SAVE.reports.length ? '•' : '', chapel: SAVE.chapel.length ? String(SAVE.chapel.length) : '', hall: SAVE.reports.length ? '•' : '' });
+  HALL.people = hallPeople();
+  const P = $('#panel'), sheet = $('#sheet'); sheet.hidden = !GUI.tab;
+  if (GUI.slide && GUI.tab) { sheet.classList.remove('slide'); void sheet.offsetWidth; sheet.classList.add('slide'); } GUI.slide = false;
+  if (!GUI.tab) { P.innerHTML = ''; save(); return; }
+  $('#sheetTitle').textContent = STATIONS.find(s => s.tab === GUI.tab).name;
+  P.innerHTML = PANELS[GUI.tab]();
   P.querySelectorAll('[data-fig]').forEach(el => { const id = el.dataset.fig; if (SPR[id]) el.appendChild(fullFigure(id, +(el.dataset.size || 60))); });
   P.querySelectorAll('[data-port]').forEach(el => { const id = el.dataset.port; if (SPR[id]) el.appendChild(portrait(id, +(el.dataset.size || 34))); });
   P.querySelectorAll('[data-thumb]').forEach(el => el.style.backgroundImage = `url(${thumb(el.dataset.thumb)})`);
   save();
+}
+// Station buttons are built once and updated in place, so keyboard focus survives a re-render.
+function updateStations(badges) {
+  const nav = $('#stations');
+  if (!nav.children.length) nav.innerHTML = STATIONS.map(s => `<button type="button" class="station" data-k="${s.k}"${s.tab ? ` data-tab="${s.tab}" aria-controls="sheet"` : ''} style="left:${s.box[0] / HW * 100}%;top:${s.box[1] / HH * 100}%;width:${s.box[2] / HW * 100}%;height:${s.box[3] / HH * 100}%"><span class="slabel">${s.short}</span></button>`).join('');
+  for (const s of STATIONS) {
+    const b = nav.querySelector(`[data-k="${s.k}"]`), locked = stationLocked(s), open = !!s.tab && GUI.tab === s.tab, badge = s.tab && badges[s.tab];
+    b.classList.toggle('on', open); b.classList.toggle('locked', locked);
+    b.disabled = locked || (s.sleep && !!RUN);
+    b.setAttribute('aria-label', `${s.name}: ${s.does}${locked ? ' (locked)' : s.sleep && RUN ? ' (a party is still out)' : ''}${badge ? ` (${badge === '•' ? 'news' : badge})` : ''}`);
+    if (s.tab) b.setAttribute('aria-expanded', String(open));
+    let bd = b.querySelector('.sbadge'); if (badge && !bd) { bd = document.createElement('span'); bd.className = 'sbadge'; bd.setAttribute('aria-hidden', 'true'); b.appendChild(bd); }
+    if (bd) { if (badge) bd.textContent = badge; else bd.remove(); }
+  }
+}
+function openPanel(tab) { GUI.tab = tab; store.set('bc.tab', tab); GUI.confirm = null; SAVE.note = ''; GUI.slide = true; }
+function closePanel() { const k = GUI.tab; GUI.tab = null; store.set('bc.tab', null); GUI.confirm = null; SND.fx('blip'); renderGuild(); const b = $(`.station[data-tab="${k}"]`); if (b) b.focus(); }
+// The stairs: sleep at once once the day's contract is taken; otherwise ask in the header first.
+function sleepAction() {
+  if (RUN) return;
+  if (contractTaken()) { sleep(); return; }
+  GUI.confirm = 'sleep'; SND.fx('blip'); renderGuild(); const y = $('#sleepRow [data-act="sleep"]'); if (y) y.focus();
 }
 function buildingCard(key) {
   const lv = SAVE.build[key], B = BUILDINGS[key]; const up = UPCOST[lv + 1];
@@ -259,6 +287,7 @@ function tabChapel() {
   h += SAVE.fallen.length ? `<ul class="fallen">${SAVE.fallen.slice().reverse().map(f => `<li><b>${f.name}</b> <span class="muted">${f.cls} · Lv ${f.lv}</span><span class="small muted"> ${f.cause} · ${typeof f.date === 'number' ? 'Day ' + f.date : new Date(f.date + 'T12:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span></li>`).join('')}</ul>` : `<p class="muted">No names yet.</p>`;
   return h + `</div>`;
 }
+const PANELS = { hall: tabHall, roster: tabRoster, recruit: tabRecruit, forge: tabForge, dispatch: tabDispatch, posts: tabPosts, chapel: tabChapel };
 function killHero(uid, cause) {
   const h = heroById(uid); if (!h) return;
   SAVE.fallen.push({ name: h.name, cls: className(h), lv: h.lv, cause, date: SAVE.day });
@@ -271,7 +300,7 @@ $('#panel').addEventListener('click', e => {
   const a = b.dataset.act, uid = b.dataset.uid, k = b.dataset.k; const hr = uid && (heroById(uid) || (SAVE.board || []).find(c => c.uid === uid));
   SND.init(); let snd = 'blip';
   switch (a) {
-    case 'tab': GUI.tab = k; store.set('bc.tab', k); GUI.confirm = null; break;
+    case 'tab': openPanel(k); break;
     case 'contract': SAVE.contract = k; break;
     case 'leader': SAVE.leader = uid; snd = 'select'; break;
     case 'party': if (SAVE.party.includes(uid)) SAVE.party = SAVE.party.filter(x => x !== uid); else if (SAVE.party.length < 5) { SAVE.party.push(uid); if (!SAVE.leader) SAVE.leader = uid; } else { snd = 'debuff'; } break;
@@ -302,7 +331,15 @@ $('#panel').addEventListener('click', e => {
   SND.fx(snd); renderGuild();
 });
 $('#panel').addEventListener('change', e => { if (e.target.id === 'dMission') GUI.dMission = e.target.value; });
-$('#tabs').addEventListener('click', e => { const b = e.target.closest('[data-act="tab"]'); if (!b) return; SND.init(); GUI.tab = b.dataset.k; store.set('bc.tab', GUI.tab); GUI.confirm = null; SAVE.note = ''; SND.fx('blip'); renderGuild(); });
+$('#stations').addEventListener('click', e => {
+  const b = e.target.closest('.station'); if (!b || b.disabled) return; SND.init();
+  const s = STATIONS.find(x => x.k === b.dataset.k);
+  if (s.sleep) return sleepAction();
+  if (GUI.tab === s.tab) return closePanel();
+  openPanel(s.tab); SND.fx('blip'); renderGuild();
+});
+$('#sheetClose').onclick = () => closePanel();
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && GUI.tab && !$('section[data-screen="guild"]').hidden) closePanel(); });
 $('#sleepRow').addEventListener('click', e => {
   const b = e.target.closest('[data-act]'); if (!b || b.disabled) return; SND.init();
   if (b.dataset.act === 'askSleep') { GUI.confirm = 'sleep'; SND.fx('blip'); renderGuild(); }
@@ -450,6 +487,6 @@ function finishRun(won, abandoned) {
     <div class="partyhp" id="rParty" style="width:100%"></div>
     <button class="btn primary" type="button" id="homeBtn">Back to the guild hall</button>`;
   const rp = $('#rParty'); party.forEach(id => { const h = heroById(id); if (!h || chapel.includes(h.name)) return; const d = document.createElement('div'); d.className = 'mini'; d.appendChild(portrait(id, 38)); d.insertAdjacentHTML('beforeend', `<div style="display:grid;gap:3px"><span>${h.name} <span class="muted num">Lv ${h.lv}</span></span><div class="xpbar"><i style="width:${Math.min(100, h.xp / xpNeed(h.lv) * 100)}%"></i></div></div>`); rp.appendChild(d); });
-  $('#homeBtn').onclick = () => { SND.fx('select'); GUI.tab = chapel.length ? 'chapel' : 'hall'; renderGuild(); show('guild'); };
+  $('#homeBtn').onclick = () => { SND.fx('select'); openPanel(chapel.length ? 'chapel' : 'hall'); renderGuild(); show('guild'); };
   show('result');
 }

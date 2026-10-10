@@ -356,6 +356,7 @@ function frame(t) {
   if (B.hitstop > 0) { B.hitstop -= dt; frozen = true; for (const tw of tweens) tw.t0 += dt; }
   for (let i = tweens.length - 1; i >= 0; i--) { const tw = tweens[i]; const k = clamp((t - tw.t0) / tw.d, 0, 1); tw.fn(tw.ease(k)); if (k >= 1) { tweens.splice(i, 1); tw.res(); } }
   if (!$('section[data-screen="battle"]').hidden && B.scene) draw(frozen ? 0 : dt, dt);
+  else if (!$('section[data-screen="guild"]').hidden) drawHall(dt);
   requestAnimationFrame(frame);
 }
 const AMB = { flies: [], fog: [], embers: [] };
@@ -486,12 +487,12 @@ function drawParts(c, dt, emissive) {
   c.globalAlpha = 1;
 }
 function drawFlame(c, f, t) {
-  const s = f.s; const fl = Math.sin(t * .02 + f.x) * .5 + Math.sin(t * .057 + f.y) * .5; const h = Math.round((f.candle ? 2 : 5 * s) + fl * (f.candle ? .6 : 1.4 * s));
+  const s = f.s; const fl = REDUCED ? 0 : Math.sin(t * .02 + f.x) * .5 + Math.sin(t * .057 + f.y) * .5; const h = Math.round((f.candle ? 2 : 5 * s) + fl * (f.candle ? .6 : 1.4 * s));
   const w = f.candle ? 1 : Math.round(3 * s); const x = Math.round(f.x - w / 2), y = Math.round(f.y);
   c.fillStyle = '#c23a14'; c.fillRect(x - (f.candle ? 0 : 1), y - h, w + (f.candle ? 0 : 2), h);
   c.fillStyle = '#ff8a2a'; c.fillRect(x, y - h + 1, w, h - 1);
   c.fillStyle = '#ffe08a'; c.fillRect(x + Math.floor(w / 3), y - Math.ceil(h * .6), Math.max(1, Math.round(w / 3)), Math.ceil(h * .6));
-  if (!f.candle && rnd() < .12 * s) part({ x: f.x + (rnd() - .5) * w, y: y - h, vx: (rnd() - .5) * .3, vy: -.4 - rnd() * .5, life: 30 + rnd() * 30, c: pick(['#ff9a3a', '#ffd06a']), e: 1, g: -.003 });
+  if (!f.candle && !f.still && rnd() < .12 * s) part({ x: f.x + (rnd() - .5) * w, y: y - h, vx: (rnd() - .5) * .3, vy: -.4 - rnd() * .5, life: 30 + rnd() * 30, c: pick(['#ff9a3a', '#ffd06a']), e: 1, g: -.003 });
 }
 function drawUnitUI(c, t, rdt) {
   const vt = (B.awaiting && B.pending) ? validTargets(B.awaiting.u, B.pending) : [];

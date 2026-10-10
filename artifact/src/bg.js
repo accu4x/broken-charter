@@ -11,6 +11,13 @@ function band(c, cols, y0, y1, w, x0) {
 function P(c, x, y, col, w, h) { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(y), w || 1, h || 1); }
 function lineC(c, x0, y0, x1, y1, col, w) { const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0))); c.fillStyle = col; const ww = w || 1; for (let i = 0; i <= n; i++) { const t = i / n; c.fillRect(Math.round(x0 + (x1 - x0) * t - (ww - 1) / 2), Math.round(y0 + (y1 - y0) * t - (ww - 1) / 2), ww, ww); } }
 function gothArch(cx, top, hw, spring) { return y => y < top ? -1 : y >= spring ? hw : hw * Math.pow((y - top) / (spring - top), .55); }
+// The guild's banner: the broken charter, a ring of gold with a gap and a cross. 22 x 32 with its rod.
+function charterBanner(M, bx, by) {
+  P(M, bx - 3, by - 2, '#4a3624', 22, 2);
+  for (let y = 0; y < 30; y++) for (let x = 0; x < 16; x++) { if (y > 24 && ((x * 7 + y * 3) % 5 < 2 || (x % 4 === 0 && y > 26))) continue; const sh = x < 2 ? '#7a2622' : x > 13 ? '#3e1212' : '#5c1a18'; P(M, bx + x, by + y, sh); }
+  const ccx = bx + 8, ccy = by + 12; for (let a = 0; a < 48; a++) { const t = a / 48 * Math.PI * 2; if (t > .35 && t < 1.15) continue; P(M, ccx + Math.cos(t) * 5, ccy + Math.sin(t) * 5, '#a8863e'); }
+  P(M, ccx, ccy - 3, '#a8863e', 1, 7); P(M, ccx - 3, ccy, '#a8863e', 7, 1); P(M, ccx + 4, ccy + 3, '#5c1a18');
+}
 function skull(c, x, y, col) { P(c, x, y, col, 4, 3); P(c, x + 1, y + 3, col, 2, 1); P(c, x, y + 1, '#120c0e'); P(c, x + 2, y + 1, '#120c0e'); }
 
 function buildScene(key, aw, ah) {
@@ -67,10 +74,7 @@ function buildScene(key, aw, ah) {
       S.flames.push({ x: x + 5, y: ty - 2, s: 1 }); S.lights.push({ x: x + 5, y: ty - 5, r: 120, c: [255, 140, 60], i: 1.05, fl: R() * 6, bloom: 1 });
     }
     // banner hanging from arch apex — the broken charter
-    { const bx = Math.round(aw / 2 - 8), by = Math.round(archTop + 2); P(M, bx - 3, by - 2, '#4a3624', 22, 2);
-      for (let y = 0; y < 30; y++) for (let x = 0; x < 16; x++) { if (y > 24 && ((x * 7 + y * 3) % 5 < 2 || (x % 4 === 0 && y > 26))) continue; const sh = x < 2 ? '#7a2622' : x > 13 ? '#3e1212' : '#5c1a18'; P(M, bx + x, by + y, sh); }
-      const ccx = bx + 8, ccy = by + 12; for (let a = 0; a < 48; a++) { const t = a / 48 * Math.PI * 2; if (t > .35 && t < 1.15) continue; P(M, ccx + Math.cos(t) * 5, ccy + Math.sin(t) * 5, '#a8863e'); }
-      P(M, ccx, ccy - 3, '#a8863e', 1, 7); P(M, ccx - 3, ccy, '#a8863e', 7, 1); P(M, ccx + 4, ccy + 3, '#5c1a18'); }
+    charterBanner(M, Math.round(aw / 2 - 8), Math.round(archTop + 2));
     // chains
     for (const cxx of [aw * .2, aw * .8]) for (let y = 0; y < 26; y += 3) { P(M, cxx, y, '#4a4a52', 2, 2); P(M, cxx, y + 2, '#2a2a30', 2, 1); }
     // floor with perspective

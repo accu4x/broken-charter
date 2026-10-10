@@ -49,11 +49,12 @@ as a single-file **Claude artifact**, built from this folder.
 | `artifact/src/classes.js` | Classes and subclasses, races, quirks, materials, gear, items, posts, buildings. |
 | `artifact/src/data.js` | Enemies, contracts, relics, status effects, map icons. |
 | `artifact/src/audio.js` | WebAudio sound effects and chiptune music. |
-| `artifact/src/guild.js` | Save and migration, the game day and Sleep, guild hall tabs, runs, the map, results. |
+| `artifact/src/hall.js` | The guild hall scene: the room, its stations (`STATIONS`), heroes in the hall, its lighting. |
+| `artifact/src/guild.js` | Save and migration, the game day and Sleep, the station panels and the sheet, runs, the map, results. |
 | `artifact/src/battle.js` | Battle engine, enemy AI, effects, lighting and rendering. |
 | `artifact/src/boot.js` | Start-up, and `window.__bc` hooks for the smoke test. |
 | `artifact/build.mjs` | Inlines everything, in load order, into `artifact/dist/broken-charter.html`. |
-| `artifact/test/smoke.py` | Headless play-through: migrations, every tab, Sleep and daily limits, a contract, a wipe. |
+| `artifact/test/smoke.py` | Headless play-through: migrations, the hall and every station, Sleep and daily limits, a contract, a wipe. |
 | `artifact/test/leak.test.cjs` | Private-phrase and secret scan of every publishable file. |
 | `docs/SPEC-progression-and-polish.md` | The next planned work: milestones, balance tests, bosses, elites, polish. |
 | `docs/showcase/` | Screenshots for Latent Mirror, captured from a real game. |
@@ -71,7 +72,9 @@ node artifact/test/leak.test.cjs --dir artifact/dist
 ```
 
 Publish `artifact/dist/broken-charter.html` to the artifact URL in `OPEN-ITEMS.md`, always to the
-same URL so players keep their saves. The artifact declares no capabilities: progress lives in
+same URL so players keep their saves. Only merged builds go live. Every pull request's build goes to
+the **preview** artifact (also in `OPEN-ITEMS.md`) first, titled "Broken Charter Preview", so Dan
+can play it before merging (item 51). The artifact declares no capabilities: progress lives in
 the player's browser (`localStorage`, keys `bc.*`).
 
 ## Save keys
@@ -80,4 +83,4 @@ the player's browser (`localStorage`, keys `bc.*`).
 |---|---|
 | `bc.save` | The guild: roster, gold, materials, items, buildings, posts, dispatches, chapel, the fallen. `v` is the shape version; `day` is the game day. |
 | `bc.run` | The contract in progress, so a reload resumes it. |
-| `bc.auto`, `bc.speed`, `bc.music`, `bc.sfx`, `bc.tab` | Per-player settings. |
+| `bc.auto`, `bc.speed`, `bc.music`, `bc.sfx`, `bc.tab` | Per-player settings. `bc.tab` is the open station's panel, or `null` when the sheet is closed. |
