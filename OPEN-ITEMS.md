@@ -4,7 +4,8 @@ Decisions, tech debt and open questions for Broken Charter. Ideas live in `BACKL
 Keep entries dated. **Correct, don't overwrite:** when a decision is superseded, mark it with the
 date and a pointer to what replaced it. Numbers are stable IDs, not priority.
 
-_Last updated: 2026-10-09 (repo set up, item 13; next build agreed, items 14–16; item 18 resolved). Before that:
+_Last updated: 2026-10-09 (repo pushed, item 13; next build agreed, items 14–16; items 17 and 18
+resolved; board refresh set, item 15). Before that:
 2026-10-08 (items 1–12, the first three builds)._
 
 ## The artifact
@@ -74,6 +75,12 @@ _Last updated: 2026-10-09 (repo set up, item 13; next build agreed, items 14–1
     **public** repo `accu4x/broken-charter`: MIT for the code, CC BY-NC-SA 4.0 for the writing, as
     in Kestrel Nine. Decisions and backlog live **in the repo** (Dan), not in `../private/`.
     The first commit and push are Claude Code's (`../private/broken-charter/HANDOVER-repo-setup-2026-10-09.md`).
+    *Done 2026-10-09 (Claude Code):* https://github.com/accu4x/broken-charter, public. Dan's rule
+    is no direct pushes to `main`, so `main` starts with a stub commit `9237321` (README,
+    licences, git settings) and the game comes in through the first pull request (`324e287`).
+    Before the push: build 194.1 KB, `smoke: clean` (22 checks), `leak: clean (git)` (26 files)
+    and `leak: clean (dir)` on `artifact/dist`. A local `pre-push` hook runs the leak check on
+    every push (Dan). Hooks are not committed, so a fresh clone needs it added again.
 
 ## Next build (agreed 2026-10-09, not started)
 
@@ -84,7 +91,7 @@ _Last updated: 2026-10-09 (repo set up, item 13; next build agreed, items 14–1
     return, posts unlock, the next feature opens. Removes `bc.dayshift` and the real clock.
 15. **Daily limits.** **One contract per day.** A dispatch takes a day: a hero goes out once,
     comes back the next day, and can be sent again then (Dan, 2026-10-09; settles item 18). The
-    **recruit board refreshes every 3–4 days**, not daily.
+    **recruit board refreshes every 3 days**, not daily (Dan, 2026-10-09).
 16. **A guided questline, one feature per day.** A steward (working name Maud, a retired
     one-eyed sergeant) introduces each feature in short dialog with a spotlight and arrow; each
     comes with a small quest and reward. Order: day 1 contract board, three starting heroes and
@@ -95,8 +102,8 @@ _Last updated: 2026-10-09 (repo set up, item 13; next build agreed, items 14–1
 
 ## Open questions
 
-17. **Which vehicle.** `[open 2026-10-09]` Hobby, backup plan or venture has not been stated.
-    `../AGENTS.md` asks for this before scoping. It has been run as a hobby so far.
+17. **Which vehicle.** `[resolved 2026-10-09]` **A hobby** (Dan). No deadline and no monetization
+    driver, as it has been run so far.
 18. **"Dispatch a person once."** `[resolved 2026-10-09]` Dan: "a dispatch takes a day." Once per
     day; the same hero may go out again the next day. Folded into item 15.
 19. **Six classes or four.** `[open 2026-10-08]` See item 6.
