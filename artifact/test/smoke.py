@@ -172,11 +172,19 @@ def main() -> int:
 
         sleep(page)
         sleep(page)
-        check(ev(page, "() => window.__bc.SAVE.board.map(c => c.uid).join()") == board0, "board holds on day 4")
+        board = "() => window.__bc.SAVE.board.map(c => c.uid).join()"
+        check(ev(page, board) == board0, "board holds on day 4")
+        # A hall upgrade rerolls the board at once, without moving the next weekly refresh.
+        ev(page, "() => { const M = window.__bc.SAVE.mats; M.bone = M.scrap = M.scale = 5; window.__bc.renderGuild(); }")
+        tab(page, "recruit")
+        page.click('[data-act="upgrade"][data-k="hall"]')
+        board1 = ev(page, board)
+        check(board1 != board0 and ev(page, "() => window.__bc.SAVE.build.hall") == 2, "a hall upgrade rerolls the board")
         sleep(page)
         sleep(page)
-        check(ev(page, "() => window.__bc.SAVE.board.map(c => c.uid).join()") != board0, "board refreshes on day 6")
+        check(ev(page, board) != board1, "board still refreshes on day 6")
         check("Week 2" in page.locator("#gDay").inner_text(), "day 6 starts week 2")
+        tab(page, "hall")
         check(page.locator('[data-act="embark"]').is_enabled(), "a new day allows a contract")
 
         tab(page, "hall")
