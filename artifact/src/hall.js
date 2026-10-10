@@ -16,7 +16,8 @@ const STATIONS = [
 // Where heroes stand (feet): idle ones around the hearth, posted ones at their posts.
 const IDLE_SPOTS = [[178, 134], [204, 136], [166, 146], [218, 124], [192, 148], [190, 122], [228, 146], [164, 124]];
 const POST_SPOTS = { chaplain: [48, 106], recruiter: [100, 104], quartermaster: [180, 108], smith: [240, 112], drill: [256, 146] };
-const HALL = { scene: null, S: 1, cw: 0, t: 0, embers: [], people: [], fade: 0 };
+const HALL = { scene: null, S: 1, cw: 0, t: 0, embers: [], people: [], fade: null };
+const HALL_FADE = [350, 250, 600]; // Sleep: fade to black, hold, fade back in (ms)
 const hcv = $('#hallCv'), hcx = hcv.getContext('2d');
 let hlm = null, hlx = null;
 
@@ -196,5 +197,9 @@ function drawHall(dt) {
   c.setTransform(1, 0, 0, 1, 0, 0); const w = hcv.width, h = hcv.height;
   const vg = c.createRadialGradient(w / 2, h * .55, h * .35, w / 2, h * .55, w * .62); vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(3,2,5,.72)'); c.fillStyle = vg; c.fillRect(0, 0, w, h);
   if (!REDUCED) { if (!grain) grain = makeGrain(); c.globalCompositeOperation = 'overlay'; c.globalAlpha = .08; c.save(); c.translate(Math.floor(rnd() * 128), Math.floor(rnd() * 128)); c.fillStyle = c.createPattern(grain, 'repeat'); c.fillRect(-128, -128, w + 256, h + 256); c.restore(); c.globalAlpha = 1; c.globalCompositeOperation = 'source-over'; }
-  if (HALL.fade > 0) { c.fillStyle = `rgba(2,1,3,${Math.min(1, HALL.fade)})`; c.fillRect(0, 0, w, h); HALL.fade -= dt * .0012; }
+  if (HALL.fade) {
+    const f = HALL.fade, [up, hold, down] = HALL_FADE; f.t += dt;
+    const a = f.t < up ? f.t / up : f.t < up + hold ? 1 : 1 - (f.t - up - hold) / down;
+    if (a <= 0) HALL.fade = null; else { c.fillStyle = `rgba(2,1,3,${a})`; c.fillRect(0, 0, w, h); }
+  }
 }

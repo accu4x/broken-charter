@@ -83,11 +83,13 @@ function desperate() { return SAVE.roster.filter(h => heroState(h) !== 'chapel')
 /* ---------- day rollover: Sleep, dispatch returns, post locks ---------- */
 const contractTaken = () => SAVE.contractDay === SAVE.day;
 function sleep() {
-  if (RUN) return;
-  SAVE.day++; GUI.confirm = null; SAVE.note = ''; HALL.fade = REDUCED ? 0 : 1.3;
+  if (RUN || HALL.fade) return;
+  SAVE.day++; GUI.confirm = null; SAVE.note = '';
   collectDispatch();
   if (refreshBoard()) SAVE.reports.push('New faces are waiting on the recruit board.');
-  SND.fx('heal'); renderGuild();
+  save(); SND.fx('heal');
+  // The day turns at once; the hall shows it once the fade has reached black.
+  if (REDUCED) renderGuild(); else { HALL.fade = { t: 0 }; setTimeout(renderGuild, HALL_FADE[0]); }
 }
 function collectDispatch() {
   const t = SAVE.day; const back = SAVE.dispatch.filter(d => d.back <= t); if (!back.length) return;

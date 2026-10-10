@@ -57,9 +57,10 @@ def tab(page: Page, key: str) -> None:
 def sleep(page: Page) -> None:
     """Press Sleep, confirming when no contract was taken today."""
     page.click('#sleepRow [data-act="askSleep"], #sleepRow [data-act="sleep"]')
-    if page.locator('#sleepRow [data-act="sleep"]').count():
+    page.wait_for_timeout(60)
+    if page.locator('#sleepRow [data-act="cancel"]').count():
         page.click('#sleepRow [data-act="sleep"]')
-    page.wait_for_timeout(120)
+    page.wait_for_timeout(1300)  # the fade to black and back, so the next Sleep is accepted
 
 
 def play_out(page: Page, limit_s: float) -> str:
@@ -196,6 +197,9 @@ def main() -> int:
         page.click('.station[data-k="stairs"]')
         page.wait_for_timeout(120)
         check(ev(page, "() => window.__bc.SAVE.day") == day + 1, "the stairs sleep once the day's contract is taken")
+        page.click('.station[data-k="stairs"]')
+        check(ev(page, "() => window.__bc.SAVE.day") == day + 1, "a second tap during the fade doesn't sleep again")
+        page.wait_for_timeout(1300)
         sleep(page)
         board = "() => window.__bc.SAVE.board.map(c => c.uid).join()"
         check(ev(page, board) == board0, "board holds on day 4")

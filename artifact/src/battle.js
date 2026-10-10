@@ -487,7 +487,7 @@ function drawParts(c, dt, emissive) {
   c.globalAlpha = 1;
 }
 function drawFlame(c, f, t) {
-  const s = f.s; const fl = Math.sin(t * .02 + f.x) * .5 + Math.sin(t * .057 + f.y) * .5; const h = Math.round((f.candle ? 2 : 5 * s) + fl * (f.candle ? .6 : 1.4 * s));
+  const s = f.s; const fl = REDUCED ? 0 : Math.sin(t * .02 + f.x) * .5 + Math.sin(t * .057 + f.y) * .5; const h = Math.round((f.candle ? 2 : 5 * s) + fl * (f.candle ? .6 : 1.4 * s));
   const w = f.candle ? 1 : Math.round(3 * s); const x = Math.round(f.x - w / 2), y = Math.round(f.y);
   c.fillStyle = '#c23a14'; c.fillRect(x - (f.candle ? 0 : 1), y - h, w + (f.candle ? 0 : 2), h);
   c.fillStyle = '#ff8a2a'; c.fillRect(x, y - h + 1, w, h - 1);
