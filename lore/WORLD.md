@@ -42,6 +42,19 @@ The lizardkin are the one people the guild might one day bargain with rather tha
 | **The Mirefen** | Settlers drained the marsh; the lizardkin want it back. The settlers are paying, for now. | Lizardkin, led by the Fen Matriarch. | Lizard scale, venom sacs. |
 | **The imperial capital** | Not yet open. The Necromancer's heartland, and the last region. | The dead. | Unknown. |
 
+## The peoples who answer the charter
+
+Five peoples walk into a guild hall looking for work (agreed with Dan, 2026-10-09):
+
+- **Humans,** the empire's heirs, quick to learn and hard to kill when it matters.
+- **Elves,** swift and old, who remember the ward before it broke.
+- **Dwarves,** stubborn and stone-blooded, who do not bend and are not stunned easily.
+- **Orcs,** who fight hardest when they are hurt.
+- **Wolfkin,** beast-folk of the frontier, with keen senses and the habit of hunting in packs.
+  Nothing ambushes a wolfkin, and wolfkin fight best beside their own.
+
+The lizardkin of the marshes are not among them, yet.
+
 ## The guild
 
 Your guild holds one of the charters. It takes contracts, recruits from whoever walks in, trains
