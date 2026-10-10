@@ -66,6 +66,20 @@ def sleep(page: Page) -> None:
     page.wait_for_timeout(1300)  # the fade to black and back, so the next Sleep is accepted
 
 
+def ensure_battle(page: Page, limit_s: float = 30) -> bool:
+    """Walk the map until a battle is on screen; False if the run ends first."""
+    end = time.time() + limit_s
+    while time.time() < end:
+        s = screen(page)
+        if s == "battle":
+            return True
+        if s == "result":
+            return False
+        page.click(".node.open" if s == "map" else ".choice")
+        page.wait_for_timeout(250)
+    return False
+
+
 def play_out(page: Page, limit_s: float) -> str:
     """Drive the map and events until the run reaches its result screen."""
     end = time.time() + limit_s
@@ -143,9 +157,12 @@ def main() -> int:
 
         tab(page, "roster")
         check(page.locator('[data-act="subFor"][data-uid="sela"]').count() == 0, "no subclass before Lv 5")
+        gold0 = ev(page, "() => window.__bc.SAVE.gold")
         page.click('[data-act="subFor"][data-uid="brenna"]')
         page.click('[data-act="sub"][data-uid="brenna"][data-k="paladin"]')
-        check(ev(page, "() => window.__bc.heroById('brenna').sub") == "paladin", "subclass chosen at Lv 5")
+        paid = gold0 - ev(page, "() => window.__bc.SAVE.gold")
+        check(ev(page, "() => window.__bc.heroById('brenna').sub") == "paladin" and paid == 100,
+              "subclass chosen at Lv 5, for 100 gold" + ("" if paid == 100 else f": paid {paid}"))
 
         tab(page, "recruit")
         page.click('[data-act="hire"]')
@@ -217,13 +234,17 @@ def main() -> int:
         cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
         check(ev(page, "() => window.__bc.PREFS.light") and page.locator("#toast").is_visible(),
               "a slow first battle turns light graphics on, with a notice")
-        page.wait_for_timeout(250)
-        lite = ev(page, "() => window.__bc.B.passes")
+        # Hold a battle open (time slowed 20x) while light graphics goes on and off.
+        in_battle = ensure_battle(page)
+        ev(page, "() => { window.__bc.B.speed = 0.05; window.__bc.PREFS.light = true; }")
+        page.wait_for_timeout(300)
+        lite, held1 = ev(page, "() => window.__bc.B.passes"), screen(page) == "battle"
         ev(page, "() => { window.__bc.PREFS.light = false; }")
-        page.wait_for_timeout(250)
-        full = ev(page, "() => window.__bc.B.passes")
-        ok = screen(page) != "battle" or (not lite["grain"] and not lite["bloom"] and full["bloom"])
-        check(ok, "light graphics mid-battle skips the grain and bloom passes" + ("" if ok else f": {lite} / {full}"))
+        page.wait_for_timeout(300)
+        full, held2 = ev(page, "() => window.__bc.B.passes"), screen(page) == "battle"
+        ev(page, "() => { window.__bc.B.speed = 14; }")
+        ok = in_battle and held1 and held2 and not lite["grain"] and not lite["bloom"] and full["grain"] and full["bloom"]
+        check(ok, "light graphics mid-battle skips the grain and bloom passes" + ("" if ok else f": {in_battle} {held1} {held2} {lite} / {full}"))
         check(play_out(page, 150) == "result", "a contract plays to its result on auto")
         page.click("#homeBtn")
         page.wait_for_timeout(200)

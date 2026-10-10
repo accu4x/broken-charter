@@ -130,7 +130,8 @@ record what Dan decided; the spec marks everything else as proposed.
     focus that is a flavour of the hero's own class (Dan: "for mages what kind of skills, for
     warriors archetype (damage, defense)... make each a flavor of their class"). Milestones cost
     materials as well as gold. Something at **15** and **20** (item 30). *Subclass at level 5 built
-    2026-10-10 (branch `settings/panel`), gold only until trials exist.*
+    2026-10-10 (branch `settings/panel`): 100 gold, the spec's proposed number, until trials add
+    sigils. A retrain costs the same in all.*
 26. **2026-10-09: Specialty dungeons.** The upgrade materials come from special dungeons, as in
     Summoners War's upgrade dungeons (Dan). Shape proposed in the spec (trials and sigils);
     details open (item 31).

@@ -3,7 +3,7 @@
 const FOE_ATK = 1.45, FOE_HP = 1.2;
 const WEEK_DAYS = 5;
 const weekOf = d => Math.ceil(d / WEEK_DAYS);
-const SUB_LV = 5; // a hero chooses a subclass from this level (OPEN-ITEMS item 25)
+const SUB_LV = 5, SUB_COST = 100; // a subclass from level 5, for gold until trials add sigils (item 25; spec §2b)
 const xpNeed = lv => 80 + 40 * (lv - 1);
 const lvMul = lv => 1 + .07 * (lv - 1);
 function newSave() { return { v: 3, day: 1, contractDay: null, gold: 60, done: 0, wins: {}, roster: [], party: [], leader: null, contract: 'crypt', mats: { bone: 2, iron: 2, scrap: 2, hide: 2, scale: 2, venom: 2 }, items: { draught: 1, antivenom: 0, oil: 0 }, pack: { draught: 1, antivenom: 0, oil: 0 }, build: { hall: 1, yard: 1, forge: 1 }, posts: {}, dispatch: [], reports: [], chapel: [], fallen: [], intel: {}, board: [], boardDay: null, nextUid: 1, note: '' }; }
@@ -209,8 +209,8 @@ function tabRoster() {
       <span class="meta small">${hr.gear.weapon ? GEAR.weapon[hr.gear.weapon].name + ' weapon' : 'No weapon'} · ${hr.gear.armor ? GEAR.armor[hr.gear.armor].name + ' armour' : 'No armour'}${hr.gear.trinket ? ' · ' + TRINKETS[hr.gear.trinket].name : ''}</span></div>
       <div class="acts">${st === 'ready' ? `<button type="button" class="btn small ${inP ? 'on' : ''}" data-act="party" data-uid="${hr.uid}">${inP ? 'In party' : 'Add to party'}</button>` : ''}
       <button type="button" class="btn small" data-act="train" data-uid="${hr.uid}" ${SAVE.gold >= tc && hr.lv < yardCap() && st !== 'chapel' ? '' : 'disabled'}>${hr.lv >= yardCap() ? 'Yard max Lv ' + yardCap() : `Train <span class="gold num">${tc}g</span>`}</button>
-      ${canSub ? `<button type="button" class="btn small primary" data-act="subFor" data-uid="${hr.uid}">Choose subclass</button>` : ''}
-      ${hr.sub && SAVE.build.yard >= 2 ? `<button type="button" class="btn small" data-act="retrain" data-uid="${hr.uid}" ${SAVE.gold >= 100 ? '' : 'disabled'}>Retrain <span class="gold">100g</span></button>` : ''}
+      ${canSub ? `<button type="button" class="btn small primary" data-act="subFor" data-uid="${hr.uid}" ${SAVE.gold >= SUB_COST ? '' : 'disabled'}>Choose subclass <span class="num">${SUB_COST}g</span></button>` : ''}
+      ${hr.sub && SAVE.build.yard >= 2 ? `<button type="button" class="btn small" data-act="retrain" data-uid="${hr.uid}" ${SAVE.gold >= SUB_COST ? '' : 'disabled'}>Retrain <span class="gold">${SUB_COST}g</span></button>` : ''}
       ${GUI.confirm === 'dismiss:' + hr.uid ? `<span class="small">Dismiss ${hr.name} for good?</span><button type="button" class="btn small" data-act="dismiss" data-uid="${hr.uid}">Dismiss</button><button type="button" class="btn small" data-act="cancel">Keep</button>` : (st === 'ready' ? `<button type="button" class="btn small ghost" data-act="askDismiss" data-uid="${hr.uid}">Dismiss</button>` : '')}</div>`;
     if (GUI.subFor === hr.uid && canSub) {
       h += `<div class="subpick">${Object.entries(CLASSES[hr.cls].subs).map(([k, s]) => `<button type="button" class="btn choice" data-act="sub" data-uid="${hr.uid}" data-k="${k}"><span>${s.name} <span class="muted small">${CLASSES[hr.cls].name} + ${s.from}</span></span><small>${s.text} New skill: <b>${s.skill.name}</b>, ${s.skill.desc.charAt(0).toLowerCase() + s.skill.desc.slice(1)}</small></button>`).join('')}</div>`;
@@ -316,8 +316,9 @@ $('#panel').addEventListener('click', e => {
     case 'embark': snd = 'select'; startRun(); return;
     case 'train': { const c = trainCost(hr); if (SAVE.gold < c || hr.lv >= yardCap()) return; SAVE.gold -= c; hr.lv++; hr.xp = 0; snd = 'buff'; break; }
     case 'subFor': GUI.subFor = GUI.subFor === uid ? null : uid; break;
-    case 'sub': hr.sub = k; GUI.subFor = null; snd = 'buff'; break;
-    case 'retrain': if (SAVE.gold < 100) return; SAVE.gold -= 100; hr.sub = null; GUI.subFor = uid; snd = 'buff'; break;
+    case 'sub': if (SAVE.gold < SUB_COST || hr.sub || hr.lv < SUB_LV) return; SAVE.gold -= SUB_COST; hr.sub = k; GUI.subFor = null; snd = 'buff'; break;
+    // Retraining clears the subclass; the new choice pays the cost, so a retrain costs SUB_COST in all.
+    case 'retrain': if (SAVE.gold < SUB_COST) return; hr.sub = null; GUI.subFor = uid; snd = 'buff'; break;
     case 'askDismiss': GUI.confirm = 'dismiss:' + uid; break;
     case 'cancel': GUI.confirm = null; break;
     case 'dismiss': SAVE.roster = SAVE.roster.filter(x => x.uid !== uid); SAVE.party = SAVE.party.filter(x => x !== uid); GUI.confirm = null; snd = 'debuff'; break;
