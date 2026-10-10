@@ -17,6 +17,7 @@ export const SCRIPTS = [
   'classes.js',  // classes, subclasses, races, quirks, materials, gear, items, posts, buildings
   'data.js',     // foes, contracts (settings), relics, status effects, map icons
   'audio.js',    // WebAudio chiptune: sound effects and per-scene music
+  'hall.js',     // guild hall scene: the room, its stations, heroes and lights
   'guild.js',    // save and migration, day clock, guild hall tabs, runs, map, results
   'battle.js',   // battle engine, AI, effects, lighting and rendering
   'boot.js',     // start-up and test hooks

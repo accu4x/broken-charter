@@ -36,8 +36,16 @@
         <button class="btn primary" id="resumeBtn" type="button">Return to the map</button>
       </div>
     </div>
-    <nav class="tabs" id="tabs" role="tablist" aria-label="Guild hall"></nav>
-    <div class="tabpanel" id="panel"></div>
+    <div class="win flush hallwin">
+      <div class="hall" id="hall">
+        <canvas id="hallCv" class="px" aria-hidden="true"></canvas>
+        <nav class="stations" id="stations" aria-label="Guild hall"></nav>
+      </div>
+    </div>
+    <div class="sheet" id="sheet" hidden>
+      <div class="sheetbar"><h2 id="sheetTitle" tabindex="-1"></h2><button class="btn small ghost" id="sheetClose" type="button">Close</button></div>
+      <div class="tabpanel" id="panel" role="region" aria-labelledby="sheetTitle"></div>
+    </div>
   </section>
 
   <section data-screen="map" hidden>

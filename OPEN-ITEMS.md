@@ -20,6 +20,7 @@ resolved; board refresh set, item 15; progression and polish planned, items 25â€
   fight after a reload. Published by Cowork from the working tree (not yet merged), after a rebuild
   from source matched `artifact/dist/` and `smoke.py` passed. *Merged 2026-10-09 as `a1e4523`
   (PR #2); the live page matches that build byte for byte.*
+- **Version 5, 2026-10-10:** the five-day week (merge `d5013a1`, PR #4). Published by Claude Code.
 - **Design notes (brainstorm):** the Claude Docs page "Guild of the Broken Charter â€” Design
   Notes", https://claude.ai/code/artifact/e728d11a-a62a-44b7-b9b4-40dde67b5136. It holds the
   first brainstorm in prose. This file is the record; where they disagree, this file wins.
@@ -97,6 +98,11 @@ resolved; board refresh set, item 15; progression and polish planned, items 25â€
     return, posts unlock, the next feature opens. Removes `bc.dayshift` and the real clock.
     *Sleep built 2026-10-09 (slice A, branch `slice-a/sleep`):* a day counter and a Sleep button
     in the header, which asks first if no contract was taken. The room is slice B.
+    *The room built 2026-10-10 (branch `hall/scene`):* `artifact/src/hall.js` draws one lit room
+    (hearth, torches, forge, embers, grain) with eight stations as buttons over the canvas; the
+    stairs sleep. Each station opens today's panel in a sheet that slides up under the room.
+    Heroes on the roster idle around the hearth, and posted heroes stand at their posts. Locked
+    stations can sit dark with a padlock; nothing is locked until the questline.
 15. **Daily limits.** **One contract per day.** A dispatch takes a day: a hero goes out once,
     comes back the next day, and can be sent again then (Dan, 2026-10-09; settles item 18). The
     **recruit board refreshes every 3 days**, not daily (Dan, 2026-10-09). `[amended 2026-10-09:

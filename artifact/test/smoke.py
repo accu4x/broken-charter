@@ -3,7 +3,9 @@
 Build first (node artifact/build.mjs). Needs Python Playwright with Chromium installed.
 Checks, on a fresh save and with no page errors:
   1. an old v1 save migrates to v3 and keeps its gold and levels;
-  2. every guild tab renders; hire, train a subclass, forge, brew, dispatch, post and pack work;
+  2. the hall draws, with eight stations, no sideways scroll at 400 px, and a sheet that opens and
+     closes; every station's panel renders; hire, train a subclass, forge, brew, dispatch, post
+     and pack work;
   3. a v2 save (real dates) migrates to v3 game days with its dispatch and post intact;
   4. Sleep returns the dispatch and frees the post;
   5. a reload mid-battle resumes that fight; a contract plays to its result on auto, and a second
@@ -45,7 +47,10 @@ def screen(page: Page) -> str:
 
 
 def tab(page: Page, key: str) -> None:
-    page.click(f'.tab[data-k="{key}"]')
+    """Open a station's panel (tapping the open one would close it)."""
+    sel = f'.station[data-tab="{key}"]'
+    if page.get_attribute(sel, "aria-expanded") != "true":
+        page.click(sel)
     page.wait_for_timeout(120)
 
 
@@ -95,9 +100,26 @@ def main() -> int:
             return [S.v, S.day, S.gold, S.roster.length, S.roster[0].lv, S.board.length]; }""")
         check(v == 3 and day == 1 and gold == 900 and roster == 6 and lv == 3 and board >= 3, "v1 save migrates to v3")
 
+        check(page.locator(".station").count() == 8, "the hall has eight stations")
+        lit = ev(page, """() => { const c = document.querySelector('#hallCv'); const d = c.getContext('2d')
+            .getImageData(0, 0, c.width, c.height).data; let s = 0; for (let i = 0; i < d.length; i += 64) s += d[i] + d[i + 1];
+            return s / (d.length / 64); }""")
+        check(lit > 20, "the hall scene draws")
+        check(ev(page, "() => document.documentElement.scrollWidth <= document.documentElement.clientWidth"),
+              "no sideways scroll at 400 px")
         for key in ["hall", "roster", "recruit", "forge", "dispatch", "posts", "chapel"]:
             tab(page, key)
-            check(page.locator("#panel").inner_text().strip() != "", f"tab renders: {key}")
+            check(page.locator("#panel").inner_text().strip() != "", f"station panel renders: {key}")
+        page.click("#sheetClose")
+        page.wait_for_timeout(100)
+        closed = page.locator("#sheet").is_hidden()
+        tab(page, "hall")
+        page.click('.station[data-tab="hall"]')
+        page.wait_for_timeout(100)
+        check(closed and page.locator("#sheet").is_hidden(), "the sheet closes (Close, or its station again)")
+        tab(page, "hall")
+        page.keyboard.press("Escape")
+        check(page.locator("#sheet").is_hidden(), "Escape closes the sheet")
 
         tab(page, "roster")
         page.click('[data-act="subFor"][data-uid="brenna"]')
@@ -170,7 +192,10 @@ def main() -> int:
         tab(page, "hall")
         check(page.locator('[data-act="embark"]').is_disabled(), "one contract per day")
 
-        sleep(page)
+        day = ev(page, "() => window.__bc.SAVE.day")
+        page.click('.station[data-k="stairs"]')
+        page.wait_for_timeout(120)
+        check(ev(page, "() => window.__bc.SAVE.day") == day + 1, "the stairs sleep once the day's contract is taken")
         sleep(page)
         board = "() => window.__bc.SAVE.board.map(c => c.uid).join()"
         check(ev(page, board) == board0, "board holds on day 4")
