@@ -1,0 +1,95 @@
+<meta charset="utf-8">
+<title>Broken Charter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jacquard+12&family=Pixelify+Sans:wght@400;500;600;700&family=Silkscreen&display=swap">
+<style>
+/*STYLE*/
+</style>
+
+<div id="app">
+  <section data-screen="guild">
+    <div class="win">
+      <div class="spread">
+        <div class="title">
+          <h1>Broken Charter</h1>
+          <p class="sub">The empire is gone. Your guild still holds its charter.</p>
+        </div>
+        <div class="row">
+          <button class="btn small" id="musicBtn" type="button">Music</button>
+          <button class="btn small" id="sfxBtn" type="button">Sound</button>
+        </div>
+      </div>
+      <div class="stats" style="margin-top:12px">
+        <div class="stat"><span class="label">Treasury</span><b class="num gold" id="gGold">0</b></div>
+        <div class="stat"><span class="label">Contracts done</span><b class="num" id="gDone">0</b></div>
+        <div class="stat"><span class="label">Guild rank</span><b id="gRank">Charter Hall</b></div>
+        <div class="stat"><span class="label">Today</span><b id="gDay"></b></div>
+      </div>
+      <div class="mats" id="gMats"></div>
+    </div>
+    <div class="win" id="resumeWin" hidden>
+      <div class="spread">
+        <p>A party is still out on <b class="gold" id="resumeName"></b>.</p>
+        <button class="btn primary" id="resumeBtn" type="button">Return to the map</button>
+      </div>
+    </div>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Guild hall"></nav>
+    <div class="tabpanel" id="panel"></div>
+  </section>
+
+  <section data-screen="map" hidden>
+    <div class="win">
+      <div class="spread">
+        <div><span class="label" id="mTier">Contract</span><h2 id="mName">Contract</h2></div>
+        <div class="stat" style="text-align:right"><span class="label">Purse</span><b class="num gold" id="mGold">0</b></div>
+      </div>
+      <p class="muted" style="margin-top:6px;font-size:14px" id="mHint"></p>
+    </div>
+    <div class="win flush"><div class="mapwrap" id="mapwrap"></div></div>
+    <div class="legend" id="legend"></div>
+    <div class="win">
+      <div class="spread" style="margin-bottom:8px"><span class="label">Party</span><div class="relics" id="mRelics"></div></div>
+      <div class="partyhp" id="mParty"></div>
+    </div>
+    <div class="confirm" id="abandonRow"></div>
+  </section>
+
+  <section data-screen="battle" hidden>
+    <div class="win flush">
+      <div class="stage" id="stage">
+        <canvas id="cv" class="px" tabindex="0" aria-label="Battlefield"></canvas>
+        <div class="banner" id="banner" hidden></div>
+      </div>
+    </div>
+    <div class="win"><div class="order" id="order" aria-label="Turn order"></div></div>
+    <div class="win actor">
+      <div class="who" id="who" hidden>
+        <canvas id="whoPort" class="px" width="30" height="30"></canvas>
+        <div style="min-width:0">
+          <div class="spread"><span class="nm" id="whoName"></span><span class="muted num" id="whoHp"></span></div>
+          <div class="hpbar"><i id="whoBar"></i></div>
+          <div class="st" id="whoSt"></div>
+        </div>
+      </div>
+      <span class="log" id="log"></span>
+      <div class="skills" id="skills"></div>
+      <p class="desc" id="desc"></p>
+      <div class="ctrl">
+        <button class="btn small" id="autoBtn" type="button">Auto</button>
+        <button class="btn small" id="speedBtn" type="button">Speed 1×</button>
+        <span class="muted" style="font-size:13px">Tap a skill, then tap a target.</span>
+      </div>
+    </div>
+  </section>
+
+  <section data-screen="event" hidden><div class="win panel" id="eventPanel"></div></section>
+  <section data-screen="result" hidden><div class="win panel" id="resultPanel"></div></section>
+</div>
+
+<script>
+(() => {
+'use strict';
+/*SCRIPTS*/
+})();
+</script>
