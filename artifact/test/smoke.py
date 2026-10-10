@@ -8,7 +8,7 @@ Checks, on a fresh save and with no page errors:
   4. Sleep returns the dispatch and frees the post;
   5. a reload mid-battle resumes that fight; a contract plays to its result on auto, and a second
      one waits for Sleep;
-  6. the recruit board refreshes every 3 days;
+  6. the recruit board refreshes at the start of each five-day week;
   7. a forced wipe kills the whole party and fills the Wall of the Fallen.
 Exit code 0 means every check passed.
 """
@@ -170,10 +170,13 @@ def main() -> int:
         tab(page, "hall")
         check(page.locator('[data-act="embark"]').is_disabled(), "one contract per day")
 
-        check(ev(page, "() => window.__bc.SAVE.board.map(c => c.uid).join()") == board0, "board holds on day 2")
         sleep(page)
         sleep(page)
-        check(ev(page, "() => window.__bc.SAVE.board.map(c => c.uid).join()") != board0, "board refreshes on day 4")
+        check(ev(page, "() => window.__bc.SAVE.board.map(c => c.uid).join()") == board0, "board holds on day 4")
+        sleep(page)
+        sleep(page)
+        check(ev(page, "() => window.__bc.SAVE.board.map(c => c.uid).join()") != board0, "board refreshes on day 6")
+        check("Week 2" in page.locator("#gDay").inner_text(), "day 6 starts week 2")
         check(page.locator('[data-act="embark"]').is_enabled(), "a new day allows a contract")
 
         tab(page, "hall")

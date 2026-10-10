@@ -157,6 +157,9 @@ record what Dan decided; the spec marks everything else as proposed.
     Dan accepted the grid in the spec (§2a); names are placeholders. Settles item 19.
 40. **2026-10-09: A week is five days.** New recruits arrive weekly, every five days (Dan).
     Supersedes item 33.
+    *Built 2026-10-09 (branch `week/five-days`):* the header reads "Day 12 · Week 3", and the
+    recruit board refreshes at the start of each week (days 1, 6, 11…), keyed to the week number
+    so a hall upgrade's reroll doesn't shift it.
 41. **2026-10-09: Class trials take any party.** Dan: "make the trials not have to be 5 of the same
     class... allow balanced party." A trial still belongs to one class a day and drops that
     class's sigils for the subclass, mastery and legend gates.
