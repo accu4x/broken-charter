@@ -83,4 +83,5 @@ the player's browser (`localStorage`, keys `bc.*`).
 |---|---|
 | `bc.save` | The guild: roster, gold, materials, items, buildings, posts, dispatches, chapel, the fallen. `v` is the shape version; `day` is the game day. |
 | `bc.run` | The contract in progress, so a reload resumes it. |
-| `bc.auto`, `bc.speed`, `bc.music`, `bc.sfx`, `bc.tab` | Per-player settings. `bc.tab` is the open station's panel, or `null` when the sheet is closed. |
+| `bc.settings` | Player settings: music and sound volume (0–1), battle speed, light graphics, and whether the frame-rate check has run. Replaced `bc.music`, `bc.sfx` and `bc.speed`, which migrate in once. |
+| `bc.auto`, `bc.tab` | Auto-battle on or off; the open station's panel, or `null` when the sheet is closed. |

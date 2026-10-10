@@ -24,6 +24,7 @@ resolved; board refresh set, item 15; progression and polish planned, items 25�
   from source matched `artifact/dist/` and `smoke.py` passed. *Merged 2026-10-09 as `a1e4523`
   (PR #2); the live page matches that build byte for byte.*
 - **Version 5, 2026-10-10:** the five-day week (merge `d5013a1`, PR #4). Published by Claude Code.
+- **Version 6, 2026-10-10:** the guild hall as a scene (merge `99eedd4`, PR #5).
 - **Design notes (brainstorm):** the Claude Docs page "Guild of the Broken Charter — Design
   Notes", https://claude.ai/code/artifact/e728d11a-a62a-44b7-b9b4-40dde67b5136. It holds the
   first brainstorm in prose. This file is the record; where they disagree, this file wins.
@@ -128,7 +129,8 @@ record what Dan decided; the spec marks everything else as proposed.
 25. **2026-10-09: Hero milestones.** Subclass at **level 5** (was 3). **Mastery at level 10**: a
     focus that is a flavour of the hero's own class (Dan: "for mages what kind of skills, for
     warriors archetype (damage, defense)... make each a flavor of their class"). Milestones cost
-    materials as well as gold. Something at **15** and **20** (item 30).
+    materials as well as gold. Something at **15** and **20** (item 30). *Subclass at level 5 built
+    2026-10-10 (branch `settings/panel`), gold only until trials exist.*
 26. **2026-10-09: Specialty dungeons.** The upgrade materials come from special dungeons, as in
     Summoners War's upgrade dungeons (Dan). Shape proposed in the spec (trials and sigils);
     details open (item 31).
@@ -237,5 +239,7 @@ record what Dan decided; the spec marks everything else as proposed.
 23. **Smoke test only.** `[2026-10-09]` No unit tests of combat maths or the save migration
     beyond `smoke.py`. Worth a small Node test of damage, turn order and migration once the
     numbers settle.
-24. **Frame rate.** `[2026-10-08]` About 46 fps headless at 3× pixel density in battle. Older phones
-    may stutter; a lighter graphics setting is in `BACKLOG.md`.
+24. **Frame rate.** `[resolved 2026-10-10: light graphics, branch `settings/panel`]` About 46 fps
+    headless at 3× pixel density in battle. Older phones may stutter; a lighter graphics setting is
+    in `BACKLOG.md`. Light graphics now exists, and turns itself on (once, with a notice) when the
+    first battle averages under 40 fps for three seconds.

@@ -37,6 +37,11 @@ up a guild; if it lands later, migrate as §2a says.
 **Decided.** A settings panel with music and sound volume, a light graphics mode for older phones,
 text speed, default battle speed, and tutorial skip.
 
+*Built 2026-10-10 (branch `settings/panel`), as proposed below: the gear opens the panel from the
+header; volume, light graphics (with the automatic switch and its notice) and battle speed are in.
+Text speed and the tutorial's skip and replay join the panel with the questline, which they
+control.*
+
 **Proposed.**
 - Opened from a gear icon in the guild hall's corner (the hall build owns the hall layout).
 - **Light mode** turns off film grain, bloom and fog, halves particle counts, caps dynamic lights

@@ -1,7 +1,7 @@
 /* ================= AUDIO ================= */
 const SND = {
   ctx: null, master: null, mus: null, sfx: null, noise: null,
-  musicOn: store.get('bc.music', true), sfxOn: store.get('bc.sfx', true), cur: null, step: 0, next: 0, timer: null,
+  cur: null, step: 0, next: 0, timer: null,
   init() {
     if (this.ctx) { if (this.ctx.state === 'suspended') this.ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
@@ -9,8 +9,8 @@ const SND = {
     const c = this.ctx;
     this.master = c.createGain(); this.master.gain.value = .9; this.master.connect(c.destination);
     const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 3200; lp.connect(this.master);
-    this.mus = c.createGain(); this.mus.gain.value = this.musicOn ? 1 : 0; this.mus.connect(lp);
-    this.sfx = c.createGain(); this.sfx.gain.value = this.sfxOn ? 1 : 0; this.sfx.connect(this.master);
+    this.mus = c.createGain(); this.mus.gain.value = PREFS.music * PREFS.music; this.mus.connect(lp);
+    this.sfx = c.createGain(); this.sfx.gain.value = PREFS.sfx * PREFS.sfx; this.sfx.connect(this.master);
     const len = c.sampleRate; const buf = c.createBuffer(1, len, c.sampleRate); const d = buf.getChannelData(0);
     for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1; this.noise = buf;
     if (this.want) this.play(this.want);
@@ -19,7 +19,7 @@ const SND = {
   tone(bus, type, f, t, dur, g, f2) { const c = this.ctx; const o = c.createOscillator(); const v = c.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(Math.max(20, f2), t + dur); v.gain.setValueAtTime(0, t); v.gain.linearRampToValueAtTime(g, t + .006); v.gain.exponentialRampToValueAtTime(.0008, t + dur); o.connect(v); v.connect(bus); o.start(t); o.stop(t + dur + .02); },
   hiss(bus, t, dur, g, type, f, f2) { const c = this.ctx; const s = c.createBufferSource(); s.buffer = this.noise; const fl = c.createBiquadFilter(); fl.type = type || 'highpass'; fl.frequency.setValueAtTime(f || 2000, t); if (f2) fl.frequency.exponentialRampToValueAtTime(f2, t + dur); const v = c.createGain(); v.gain.setValueAtTime(g, t); v.gain.exponentialRampToValueAtTime(.0008, t + dur); s.connect(fl); fl.connect(v); v.connect(bus); s.start(t, Math.random() * .5); s.stop(t + dur + .02); },
   fx(name) {
-    if (!this.ctx || !this.sfxOn) return; const t = this.ctx.currentTime + .005, b = this.sfx;
+    if (!this.ctx || !PREFS.sfx) return; const t = this.ctx.currentTime + .005, b = this.sfx;
     const arp = (type, notes, gap, g, d) => notes.forEach((n, i) => this.tone(b, type, this.freq(n), t + i * gap, d || .14, g));
     switch (name) {
       case 'blip': this.tone(b, 'square', 660, t, .05, .035); break;
@@ -73,8 +73,9 @@ const SND = {
       this.step++; this.next += sd;
     }
   },
-  setMusic(on) { this.musicOn = on; store.set('bc.music', on); if (this.mus) this.mus.gain.setTargetAtTime(on ? 1 : 0, this.ctx.currentTime, .05); },
-  setSfx(on) { this.sfxOn = on; store.set('bc.sfx', on); if (this.sfx) this.sfx.gain.setTargetAtTime(on ? 1 : 0, this.ctx.currentTime, .02); }
+  // Volumes run 0 to 1; the gain is squared so the slider feels even to the ear.
+  setMusic(v) { PREFS.music = v; savePrefs(); if (this.mus) this.mus.gain.setTargetAtTime(v * v, this.ctx.currentTime, .05); },
+  setSfx(v) { PREFS.sfx = v; savePrefs(); if (this.sfx) this.sfx.gain.setTargetAtTime(v * v, this.ctx.currentTime, .02); }
 };
 window.addEventListener('pointerdown', () => SND.init(), { capture: true });
 window.addEventListener('keydown', () => SND.init(), { capture: true });

@@ -2,13 +2,16 @@
 
 Build first (node artifact/build.mjs). Needs Python Playwright with Chromium installed.
 Checks, on a fresh save and with no page errors:
-  1. an old v1 save migrates to v3 and keeps its gold and levels;
+  1. an old v1 save migrates to v3 and keeps its gold and levels; old sound and speed keys move
+     into bc.settings;
   2. the hall draws, with eight stations, no sideways scroll at 400 px, and a sheet that opens and
      closes; every station's panel renders; hire, train a subclass, forge, brew, dispatch, post
      and pack work;
   3. a v2 save (real dates) migrates to v3 game days with its dispatch and post intact;
   4. Sleep returns the dispatch and frees the post;
-  5. a reload mid-battle resumes that fight; a contract plays to its result on auto, and a second
+  4b. the settings panel sets volume, light graphics and battle speed; a subclass waits for Lv 5;
+  5. a slow first battle turns light graphics on, once, with a notice; light graphics toggled
+     mid-battle skips the grain and bloom passes; a reload mid-battle resumes that fight; a contract plays to its result on auto, and a second
      one waits for Sleep;
   6. the recruit board refreshes at the start of each five-day week;
   7. a forced wipe kills the whole party and fills the Wall of the Fallen.
@@ -25,7 +28,7 @@ from playwright.sync_api import Page, sync_playwright
 
 DIST = Path(__file__).resolve().parents[1] / "dist" / "broken-charter.html"
 OLD_SAVE = {
-    "gold": 900, "done": 2, "wins": {"crypt": 2}, "heroes": {"brenna": {"lv": 3, "xp": 10}},
+    "gold": 900, "done": 2, "wins": {"crypt": 2}, "heroes": {"brenna": {"lv": 5, "xp": 10}, "sela": {"lv": 4, "xp": 0}},
     "party": ["brenna", "sela", "orrin", "hilde", "grask"], "leader": "brenna", "contract": "crypt",
 }
 
@@ -93,13 +96,17 @@ def main() -> int:
         page.on("pageerror", lambda e: errors.append(str(e)))
         page.goto(DIST.as_uri())
         ev(page, """o => { localStorage.clear(); localStorage.setItem('bc.auto', 'true');
+                     localStorage.setItem('bc.music', 'false'); localStorage.setItem('bc.speed', '2');
                      localStorage.setItem('bc.save', JSON.stringify(o)); }""", OLD_SAVE)
         page.reload()
         page.wait_for_timeout(900)
 
         v, day, gold, roster, lv, board = ev(page, """() => { const S = window.__bc.SAVE;
             return [S.v, S.day, S.gold, S.roster.length, S.roster[0].lv, S.board.length]; }""")
-        check(v == 3 and day == 1 and gold == 900 and roster == 6 and lv == 3 and board >= 3, "v1 save migrates to v3")
+        check(v == 3 and day == 1 and gold == 900 and roster == 6 and lv == 5 and board >= 3, "v1 save migrates to v3")
+        prefs = ev(page, """() => [window.__bc.PREFS.music, window.__bc.PREFS.speed, localStorage.getItem('bc.music'),
+            localStorage.getItem('bc.speed'), !!localStorage.getItem('bc.settings')]""")
+        check(prefs == [0, 2, None, None, True], "old sound and speed keys move into bc.settings" + ("" if prefs == [0, 2, None, None, True] else f": {prefs}"))
 
         check(page.locator(".station").count() == 8, "the hall has eight stations")
         lit = ev(page, """() => { const c = document.querySelector('#hallCv'); const d = c.getContext('2d')
@@ -122,10 +129,23 @@ def main() -> int:
         page.keyboard.press("Escape")
         check(page.locator("#sheet").is_hidden(), "Escape closes the sheet")
 
+        page.click("#settingsBtn")
+        page.wait_for_timeout(120)
+        check(page.locator("#sheetTitle").inner_text() == "Settings", "the settings panel opens")
+        ev(page, """() => { const r = document.querySelector('#setMusic'); r.value = 50; r.dispatchEvent(new Event('input', { bubbles: true })); }""")
+        page.click('[data-act="speed"][data-k="3"]')
+        page.click('[data-act="light"]')
+        st = ev(page, "() => { const P = window.__bc.PREFS; return [P.music, P.speed, P.light, JSON.parse(localStorage.getItem('bc.settings')).speed]; }")
+        check(st == [0.5, 3, True, 3], "settings set volume, battle speed and light graphics" + ("" if st == [0.5, 3, True, 3] else f": {st}"))
+        page.click('[data-act="light"]')
+        page.click("#settingsBtn")
+        check(page.locator("#sheet").is_hidden() and not ev(page, "() => window.__bc.PREFS.light"), "settings close; light graphics back off")
+
         tab(page, "roster")
+        check(page.locator('[data-act="subFor"][data-uid="sela"]').count() == 0, "no subclass before Lv 5")
         page.click('[data-act="subFor"][data-uid="brenna"]')
         page.click('[data-act="sub"][data-uid="brenna"][data-k="paladin"]')
-        check(ev(page, "() => window.__bc.heroById('brenna').sub") == "paladin", "subclass chosen at Lv 3")
+        check(ev(page, "() => window.__bc.heroById('brenna').sub") == "paladin", "subclass chosen at Lv 5")
 
         tab(page, "recruit")
         page.click('[data-act="hire"]')
@@ -187,6 +207,23 @@ def main() -> int:
         page.click("#resumeBtn")
         page.wait_for_timeout(250)
         check(r == ["0,0", 0] and screen(page) == "battle", "a reload mid-battle resumes the same fight" + ("" if r == ["0,0", 0] else f": {r}"))
+
+        # A slow first battle (the CPU slowed 8x) turns light graphics on, once, and says so.
+        cdp = page.context.new_cdp_session(page)
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 8})
+        end = time.time() + 20
+        while time.time() < end and not ev(page, "() => window.__bc.PREFS.lightChecked"):
+            page.wait_for_timeout(250)
+        cdp.send("Emulation.setCPUThrottlingRate", {"rate": 1})
+        check(ev(page, "() => window.__bc.PREFS.light") and page.locator("#toast").is_visible(),
+              "a slow first battle turns light graphics on, with a notice")
+        page.wait_for_timeout(250)
+        lite = ev(page, "() => window.__bc.B.passes")
+        ev(page, "() => { window.__bc.PREFS.light = false; }")
+        page.wait_for_timeout(250)
+        full = ev(page, "() => window.__bc.B.passes")
+        ok = screen(page) != "battle" or (not lite["grain"] and not lite["bloom"] and full["bloom"])
+        check(ok, "light graphics mid-battle skips the grain and bloom passes" + ("" if ok else f": {lite} / {full}"))
         check(play_out(page, 150) == "result", "a contract plays to its result on auto")
         page.click("#homeBtn")
         page.wait_for_timeout(200)
