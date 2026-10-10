@@ -1,7 +1,8 @@
 /* ================= SAVE & CLOCK ================= */
 // Game days, not the device clock: SAVE.day counts up by one each time the player sleeps.
 const FOE_ATK = 1.45, FOE_HP = 1.2;
-const BOARD_DAYS = 3;
+const WEEK_DAYS = 5;
+const weekOf = d => Math.ceil(d / WEEK_DAYS);
 const xpNeed = lv => 80 + 40 * (lv - 1);
 const lvMul = lv => 1 + .07 * (lv - 1);
 function newSave() { return { v: 3, day: 1, contractDay: null, gold: 60, done: 0, wins: {}, roster: [], party: [], leader: null, contract: 'crypt', mats: { bone: 2, iron: 2, scrap: 2, hide: 2, scale: 2, venom: 2 }, items: { draught: 1, antivenom: 0, oil: 0 }, pack: { draught: 1, antivenom: 0, oil: 0 }, build: { hall: 1, yard: 1, forge: 1 }, posts: {}, dispatch: [], reports: [], chapel: [], fallen: [], intel: {}, board: [], boardDay: null, nextUid: 1, note: '' }; }
@@ -73,7 +74,8 @@ function genCandidate() {
   const cost = 70 + nG * 25 - nB * 15 + (lv - 1) * 60;
   return { uid: 'r' + (SAVE.nextUid++) + '_' + Math.floor(R() * 1e4), name, cls, race, lv, xp: 0, quirks, gear: { weapon: 0, armor: 0, trinket: null }, sub: null, look: recruitLook(cls, race, R), cost };
 }
-const boardDaysLeft = () => SAVE.boardDay == null ? 0 : Math.max(0, SAVE.boardDay + BOARD_DAYS - SAVE.day);
+// New recruits arrive at the start of each week; a hall upgrade rerolls the board without moving the week.
+const boardDaysLeft = () => SAVE.boardDay == null || weekOf(SAVE.day) > weekOf(SAVE.boardDay) ? 0 : weekOf(SAVE.day) * WEEK_DAYS + 1 - SAVE.day;
 function refreshBoard() { if (SAVE.board && boardDaysLeft() > 0) return false; const n = 2 + SAVE.build.hall + (postHolder('recruiter') ? 1 : 0); SAVE.board = Array.from({ length: n }, genCandidate); SAVE.boardDay = SAVE.day; save(); return true; }
 function hireCost(c) { if (desperate()) return 0; return Math.round(c.cost * (1 - disc.recruit()) * (1 + (c.quirks.includes('greedy') ? .15 : 0))); }
 function desperate() { return SAVE.roster.filter(h => heroState(h) !== 'chapel').length === 0; }
@@ -123,7 +125,7 @@ function renderGuild() {
   if (!SAVE.party.includes(SAVE.leader)) SAVE.leader = SAVE.party[0] || null;
   SND.play('guild');
   $('#gGold').textContent = SAVE.gold; $('#gDone').textContent = SAVE.done; $('#gRank').textContent = rankName();
-  $('#gDay').textContent = SAVE.day;
+  $('#gDay').innerHTML = `${SAVE.day} <span class="muted">· Week ${weekOf(SAVE.day)}</span>`;
   $('#sleepRow').innerHTML = GUI.confirm === 'sleep'
     ? `<span>End the day without a contract?</span><button class="btn small" data-act="sleep" type="button">Sleep</button><button class="btn small" data-act="cancel" type="button">Stay up</button>`
     : `<span class="muted small">${RUN ? 'A party is still out.' : contractTaken() ? "Today's contract is taken." : 'One contract a day.'}</span><button class="btn small" data-act="${contractTaken() ? 'sleep' : 'askSleep'}" ${RUN ? 'disabled' : ''} type="button">Sleep</button>`;
@@ -191,7 +193,7 @@ function tabRoster() {
 }
 function tabRecruit() {
   let h = `<div class="win">${buildingCard('hall')}</div>`;
-  h += `<div class="win"><div class="spread" style="margin-bottom:6px"><h2>Recruit board</h2><span class="label">Roster ${SAVE.roster.length} / ${rosterCap()}</span></div><p class="muted small" style="margin-bottom:10px">New faces arrive every ${BOARD_DAYS} days; the next in ${boardDaysLeft() === 1 ? '1 day' : boardDaysLeft() + ' days'}. ${postHolder('recruiter') ? `${postHolder('recruiter').name} is recruiting: hires ${Math.round(disc.recruit() * 100)}% cheaper.` : 'Post a Recruiter for better terms.'}${desperate() ? ' With no one left, a volunteer will sign on for free.' : ''}</p><div class="roster">`;
+  h += `<div class="win"><div class="spread" style="margin-bottom:6px"><h2>Recruit board</h2><span class="label">Roster ${SAVE.roster.length} / ${rosterCap()}</span></div><p class="muted small" style="margin-bottom:10px">New faces arrive at the start of each week, in ${boardDaysLeft() === 1 ? '1 day' : boardDaysLeft() + ' days'}. ${postHolder('recruiter') ? `${postHolder('recruiter').name} is recruiting: hires ${Math.round(disc.recruit() * 100)}% cheaper.` : 'Post a Recruiter for better terms.'}${desperate() ? ' With no one left, a volunteer will sign on for free.' : ''}</p><div class="roster">`;
   if (!SAVE.board.length) h += `<p class="muted">The board is empty until new faces arrive.</p>`;
   for (const c of SAVE.board) {
     const cost = hireCost(c), full = SAVE.roster.length >= rosterCap();
